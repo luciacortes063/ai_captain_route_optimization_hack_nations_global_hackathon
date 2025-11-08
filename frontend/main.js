@@ -113,7 +113,39 @@ function clearHazards() {
   hazardLayers = [];
 }
 
+
 // ---- hardened route draw + safe fit
+// --- Simple route smoothing with Chaikin's corner cutting ---
+function smoothRoute(coords, iterations = 2) {
+  if (!Array.isArray(coords) || coords.length < 3) return coords;
+
+  let current = coords.map(p => [p[0], p[1]]); // copy
+
+  for (let it = 0; it < iterations; it++) {
+    const next = [];
+    next.push(current[0]); // keep start
+
+    for (let i = 0; i < current.length - 1; i++) {
+      const [lat1, lon1] = current[i];
+      const [lat2, lon2] = current[i + 1];
+
+      // Chaikin: Q = 0.75P + 0.25Q, R = 0.25P + 0.75Q
+      const qLat = 0.75 * lat1 + 0.25 * lat2;
+      const qLon = 0.75 * lon1 + 0.25 * lon2;
+      const rLat = 0.25 * lat1 + 0.75 * lat2;
+      const rLon = 0.25 * lon1 + 0.75 * lon2;
+
+      next.push([qLat, qLon]);
+      next.push([rLat, rLon]);
+    }
+
+    next.push(current[current.length - 1]); // keep end
+    current = next;
+  }
+
+  return current;
+}
+
 function drawRouteFromCoordinates(rawCoords) {
   if (!Array.isArray(rawCoords)) return;
 
@@ -137,15 +169,16 @@ function drawRouteFromCoordinates(rawCoords) {
 
   if (coords.length < 2) return;
 
-  if (routeLayer) map.removeLayer(routeLayer);
-  routeLayer = L.polyline(coords, { weight: 4, color: "#d00" }).addTo(map);
+  // smooth route
+  const smoothCoords = smoothRoute(coords, 2); // prueba 1 o 2 iteraciones
 
-  let b = L.latLngBounds(coords);
-  // protect degenerate bounds
+  if (routeLayer) map.removeLayer(routeLayer);
+  routeLayer = L.polyline(smoothCoords, { weight: 4, color: "#d00" }).addTo(map);
+
+  let b = L.latLngBounds(smoothCoords);
   if (b.getNorth() === b.getSouth() || b.getEast() === b.getWest()) {
     b = b.pad(0.0001);
   }
-  // keep within global region
   if (!bounds.intersects(b)) {
     b = L.latLngBounds([
       b.getSouthWest(), b.getNorthEast(),
@@ -160,9 +193,9 @@ function drawRouteFromCoordinates(rawCoords) {
     return;
   }
 
-  // defer clamp to avoid immediate re-entrancy after fit
   setTimeout(() => clampHorizontalAtMinZoom(), 0);
 }
+
 
 function drawRiskLayers(layers) {
   clearHazards();
