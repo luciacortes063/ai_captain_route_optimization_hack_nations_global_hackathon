@@ -1,0 +1,53 @@
+:root{
+  --border:#e7e7e7;
+  --muted:#6b7280;
+}
+
+*{ box-sizing:border-box; }
+html, body, #app{ height:100%; margin:0; }
+body{ font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+
+#app{
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  height:100%;
+}
+
+.sidebar{
+  border-right:1px solid var(--border);
+  padding:16px;
+  overflow:auto;
+}
+
+.sidebar h2{ margin:0 0 12px; }
+
+label{ display:block; font-size:14px; color:var(--muted); margin:12px 0 6px; }
+select{
+  width:100%; padding:8px; border:1px solid var(--border); border-radius:8px;
+}
+
+.modes{ margin:12px 0; display:flex; gap:16px; }
+
+button#btn{
+  width:100%; padding:10px 14px; border:0; border-radius:10px; cursor:pointer;
+  background:#111827; color:white; font-weight:600;
+}
+
+.msg{ margin-top:10px; color:#b00020; min-height:1.2em; }
+
+.results{ margin-top:16px; }
+.hidden{ display:none; }
+
+.kv{ display:flex; justify-content:space-between; margin:6px 0; }
+.kv span{ color:var(--muted); }
+
+.legend{ margin-top:12px; }
+.chip{ display:inline-block; width:14px; height:8px; border-radius:999px; margin-right:6px; vertical-align:middle; }
+.chip-route{ background:#d00; }
+.chip-piracy{ background:orange; opacity:.6; }
+.chip-storm{ background:deepskyblue; opacity:.5; }
+
+#map{ height:100%; width:100%; }
+
+/* Leaflet tweaks */
+.leaflet-container{ font-family:inherit; }
