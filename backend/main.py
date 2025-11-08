@@ -5,6 +5,7 @@ from typing import Dict, Optional, List
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware  # ⬅️ NEW
 
 from backend.models import (
     HealthResponse,
@@ -25,13 +26,30 @@ from backend.data_sources import (
 from backend.graph_builder import load_graph, build_grid_graph, save_graph
 from backend.routing import compute_route
 from backend.config import GRAPH_PICKLE_PATH
-from backend.live_weather import update_graph_weather 
+from backend.live_weather import update_graph_weather
 
 
 app = FastAPI(
     title="AI Captain Route Optimization API",
     version="0.1.0",
     description="API for maritime route optimization considering weather, piracy and other risk layers.",
+)
+
+# ───────────────────────────────
+# CORS (allow your local frontends)
+# ───────────────────────────────
+ALLOWED_ORIGINS = [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,   # during dev you could use ["*"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 PORTS: Dict[str, Port] = {}
@@ -44,7 +62,6 @@ def init_app():
     global PORTS, GRAPH, PIRACY_LAYER, WEATHER_LAYER
 
     PORTS = load_ports_from_wpi()
-
 
     if GRAPH_PICKLE_PATH.exists():
         from backend.graph_builder import load_graph as _load_graph
@@ -63,7 +80,6 @@ def init_app():
         update_graph_weather(GRAPH)
     except Exception as exc:
         print(f"[WARN] Could not update live weather on startup: {exc}")
-
 
 
 @app.on_event("startup")
@@ -116,7 +132,12 @@ async def search_ports(
     return PortsSearchResponse(ports=results)
 
 
-@app.get("/ports/{portId}", response_model=Port, responses={404: {"model": ErrorResponse}}, tags=["Ports"])
+@app.get(
+    "/ports/{portId}",
+    response_model=Port,
+    responses={404: {"model": ErrorResponse}},
+    tags=["Ports"],
+)
 async def get_port(portId: str):
     if portId not in PORTS:
         raise HTTPException(
@@ -195,7 +216,7 @@ async def risk_layers(
     if WEATHER_LAYER and (type_list is None or "weather" in type_list):
         layers.append(WEATHER_LAYER)
 
-    # TODO: Add box
+    # TODO: filter by bbox if provided
 
     return RiskLayersResponse(layers=layers)
 
