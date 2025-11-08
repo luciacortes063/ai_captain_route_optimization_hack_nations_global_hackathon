@@ -93,6 +93,8 @@ function clampHorizontalAtMinZoom() {
   }
 }
 
+map.on("moveend", clampHorizontalAtMinZoom);
+map.on("zoomend", clampHorizontalAtMinZoom);
 setTimeout(fitWidthAndLock, 0);
 map.whenReady(fitWidthAndLock);
 window.addEventListener("resize", fitWidthAndLock);

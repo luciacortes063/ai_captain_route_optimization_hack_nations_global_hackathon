@@ -17,6 +17,7 @@ from backend.data_sources import (
     load_piracy_zones,
     load_weather_zones,
     is_shallow,
+    is_land,
 )
 from backend.models import RiskLayer
 from haversine import haversine
@@ -62,6 +63,7 @@ def compute_node_risks(
 
     shallow = is_shallow(bathy_ds, lat, lon)
     depth_penalty = 1.0 if shallow else 0.0
+    
 
     return piracy_risk, weather_risk, depth_penalty
 
@@ -81,9 +83,13 @@ def build_grid_graph(
     lat_values = np.arange(lat_min, lat_max + GRID_LAT_STEP, GRID_LAT_STEP)
     lon_values = np.arange(lon_min, lon_max + GRID_LON_STEP, GRID_LON_STEP)
 
-    # Crear nodos
+    # create nodes
     for lat in lat_values:
         for lon in lon_values:
+            # avoid land nodes
+            if is_land(bathy_ds, float(lat), float(lon)):
+                continue
+
             piracy_risk, weather_risk, depth_penalty = compute_node_risks(
                 float(lat),
                 float(lon),
@@ -105,6 +111,9 @@ def build_grid_graph(
     for lat in lat_values:
         for lon in lon_values:
             node_id = f"{lat:.3f},{lon:.3f}"
+
+            if node_id not in G.nodes:
+                continue
 
             neighbors = [
                 (lat + GRID_LAT_STEP, lon),

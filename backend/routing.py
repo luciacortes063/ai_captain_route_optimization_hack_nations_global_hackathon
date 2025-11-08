@@ -38,17 +38,18 @@ def get_coordinates_of_node(G: nx.Graph, node_id: str) -> Tuple[float, float]:
 def build_weight_function(mode: str, G: nx.Graph):
 
     if mode == "fast":
-        lambda_p = LAMBDA_PIRACY * 0.3
-        lambda_w = LAMBDA_WEATHER * 0.3
+        lambda_p = LAMBDA_PIRACY * 0.2
+        lambda_w = LAMBDA_WEATHER * 0.2
         lambda_d = LAMBDA_DEPTH * 0.5
     elif mode == "safe":
-        lambda_p = LAMBDA_PIRACY * 1.5
-        lambda_w = LAMBDA_WEATHER * 1.5
-        lambda_d = LAMBDA_DEPTH * 2.0
-    else:  #balanced
+        lambda_p = LAMBDA_PIRACY * 2.0
+        lambda_w = LAMBDA_WEATHER * 2.0
+        lambda_d = LAMBDA_DEPTH * 3.0
+    else:  # balanced
         lambda_p = LAMBDA_PIRACY
         lambda_w = LAMBDA_WEATHER
         lambda_d = LAMBDA_DEPTH
+
 
     def weight(u: str, v: str, attrs: dict) -> float:
         dist_nm = attrs.get("distance_nm", 1.0)

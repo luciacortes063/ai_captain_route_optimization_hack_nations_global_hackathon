@@ -1,5 +1,7 @@
 # main.py
 from __future__ import annotations
+from fastapi.middleware.cors import CORSMiddleware
+
 
 from typing import Dict, Optional, List
 
@@ -35,22 +37,21 @@ app = FastAPI(
     description="API for maritime route optimization considering weather, piracy and other risk layers.",
 )
 
-# ───────────────────────────────
-# CORS (allow your local frontends)
-# ───────────────────────────────
-ALLOWED_ORIGINS = [
+origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+    "http://localhost:3000",   
+    "http://127.0.0.1:3000",
 ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,   # during dev you could use ["*"]
+    allow_origins=origins,        
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 PORTS: Dict[str, Port] = {}
 GRAPH = None

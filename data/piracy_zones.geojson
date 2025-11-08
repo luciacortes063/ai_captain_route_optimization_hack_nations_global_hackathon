@@ -4,9 +4,9 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "piracy_somalia_2023_2025",
-        "name": "High Risk Area - Somalia & Gulf of Aden (2023-2025 incidents)",
-        "risk_level": 3
+        "id": "piracy_somalia_2023_2025_bbox",
+        "name": "General Watch Area - Somalia & Gulf of Aden (2023-2025 incidents)",
+        "risk_level": 1
       },
       "geometry": {
         "type": "Polygon",
@@ -17,6 +17,166 @@
           [48.0, 13.0],
           [48.0, -2.0]
         ]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_042_24",
+        "incident_number": "042-24",
+        "date": "2024-05-10",
+        "name": "Attack on product tanker in Gulf of Aden",
+        "risk_level": 3,
+        "description": "10.05.2024, 0457 UTC. About five to six pirates in black clothes armed with AK-47 and RPG in a skiff approached a product tanker underway near 12°38.65'N 048°24.06'E in the Gulf of Aden. Grapnel hook and ladder sighted. Master sounded ship’s horn and altered course. As the skiff continued to approach, the armed guards showed their weapons. Pirates opened fire towards the tanker and the armed team retaliated, causing a fire on the skiff. The tanker continued its voyage."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [48.401, 12.644167]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_014_24",
+        "incident_number": "014-24",
+        "date": "2024-01-27",
+        "name": "Firing on bulk carrier east of Xaafuun",
+        "risk_level": 3,
+        "description": "27.01.2024, 0805 UTC. Position 10°54.1'N 064°17.1'E, around 764 nm east of Xaafuun, Somalia. Four to five armed persons fired upon a bulk carrier underway. The onboard armed security team returned fire, resulting in the skiff retreating and moving away. Ship and crew reported safe."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [64.285, 10.901667]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_020_24",
+        "incident_number": "020-24",
+        "date": "2024-01-24",
+        "name": "Approach on fishing vessel ESE of Eyl",
+        "risk_level": 3,
+        "description": "24.01.2024, 0550 UTC. Position 05°33'N 065°50'E, around 950 nm ESE of Eyl, Somalia. A fishing vessel underway was approached by six armed pirates in a skiff. A suspected mother vessel was seen in the vicinity. Alarm raised and all crew mustered in the citadel. The master contacted the Korean navy and the onboard armed security team fired warning shots, resulting in the pirates aborting the approach and moving away. All crew reported safe."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [65.833333, 5.55]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_030_24",
+        "incident_number": "030-24",
+        "date": "2024-03-12",
+        "name": "Hijacking of bulk carrier east of Mogadishu",
+        "risk_level": 3,
+        "description": "12.03.2024, 0853 UTC. Position 01°27'N 054°53'E, around 550 nm east of Mogadishu, Somalia. A bulk carrier underway was attacked and hijacked by armed pirates in small boats. The ship's SSAS was activated and all 23 crew members were taken hostage. Pirates gained full control of the ship and later anchored it off the Somali coast. On 14.04.2024 the ship was released and escorted to a safe place by EU NAVFOR."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [54.883333, 1.45]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_029_24",
+        "incident_number": "029-24",
+        "date": "2024-01-27",
+        "name": "Hijacking of fishing vessel east of Mogadishu",
+        "risk_level": 3,
+        "description": "27.01.2024, 0330 UTC. Position 00°35'N 061°19'E, around 960 nm east of Mogadishu, Somalia. Three armed pirates hijacked a fishing vessel underway. A Seychelles Coast Guard vessel was dispatched to locate the vessel. On 29 January 2024, after a brief exchange of fire with the pirates, the coast guard boarded the fishing vessel and rescued the crew. The three pirates were detained and the fishing vessel was escorted to a safe port. All crew safe."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [61.316667, 0.583333]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_049_24",
+        "incident_number": "049-24",
+        "date": "2024-05-23",
+        "name": "Boarding of general cargo ship SE of Mogadishu",
+        "risk_level": 3,
+        "description": "23.05.2024, 1045 UTC. Position 01°16'S 051°07'E, around 400 nm SE of Mogadishu, Somalia. Armed pirates in two small crafts boarded a general cargo ship underway. The crew took shelter in the citadel. A warship and helicopter proceeded to the location to assist. The pirates managed to escape. Crew and ship reported safe."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [51.116667, -1.266667]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_033_25",
+        "incident_number": "033-25",
+        "date": "2025-03-16",
+        "name": "Hijacking of fishing dhow off Durdura",
+        "risk_level": 3,
+        "description": "16.03.2025. Off Durdura, Somalia. Armed pirates hijacked a fishing dhow underway and took eight crew members hostage. The incident is under investigation."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [50.58538, 9.03354]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_020_25",
+        "incident_number": "020-25",
+        "date": "2025-02-17",
+        "name": "Hijacking of Yemeni-flagged fishing vessel off Garmaal",
+        "risk_level": 3,
+        "description": "17.02.2025, 0001 UTC. Off Garmaal, north of Eyl, Somalia. Six armed pirates hijacked a Yemeni-flagged fishing vessel and took the captain and four crew members hostage; the remaining crew were released. Reports suggest the vessel may be used as a mothership for maritime criminal activities. On 23 February 2025 a Spanish naval vessel identified and boarded the fishing vessel. The crew indicated that the pirates had left the vessel. All crew safe."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [50.186264, 8.353708]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_016_25",
+        "incident_number": "016-25",
+        "date": "2025-02-07",
+        "name": "Night-time hijacking of dhow SE of Eyl",
+        "risk_level": 3,
+        "description": "07.02.2025, night hours. Position 07°54'N 049°56'E, around 6 nm SE of Eyl, Somalia. Six persons boarded and hijacked a dhow and took its crew, including a Somali guard, hostage. The guard was later released. Reports indicate the perpetrators left the dhow on or before 13 February 2025 after stealing crew personal effects. All crew safe."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [49.933333, 7.9]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "incident_119_23",
+        "incident_number": "119-23",
+        "date": "2023-12-14",
+        "name": "Hijacking of bulk carrier east of Bossaso",
+        "risk_level": 3,
+        "description": "14.12.2023, 1200 UTC. Position 12°03'N 061°20'E, around 700 nm east of Bossaso, Somalia. Armed persons boarded and hijacked a bulk carrier underway and sailed it towards the Somali coast. Further details awaited."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [61.333333, 12.05]
       }
     }
   ]
