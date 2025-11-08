@@ -1,0 +1,164 @@
+port_id,port_name,country,latitude,longitude
+47020.0,Chake Chake,Tanzania,-5.25,39.766667
+47005.0,Mjimwema Terminal,Tanzania,-6.816667,39.366667
+48104.0,Sharmah,Saudi Arabia,27.933333,35.25
+47942.0,Al Khair Oil Terminal,Sudan,19.583333,37.25
+48057.0,Zafarana Terminal,Egypt,29.166667,32.683333
+47989.0,Zeit Bay Lpg Terminal,Egypt,27.8,33.566667
+48341.0,Ras Al Ghar,Saudi Arabia,26.9,49.866667
+48076.0,Elat,Israel,29.55,34.95
+47990.0,El Ghardaqa,Egypt,27.216667,33.85
+47130.0,Kismaayo,Somalia,-0.366667,42.55
+47100.0,Mombasa,Kenya,-4.066667,39.666667
+48465.0,Kharg Island Oil Terminal,Iran,29.233333,50.333333
+48450.0,Bandar-E Mahshahr,Iran,30.466667,49.183333
+44965.0,Dhekelia,Cyprus,34.966667,33.716667
+45100.0,Ashdod,Israel,31.816667,34.65
+48020.0,Ras Gharib,Egypt,28.35,33.1
+44960.0,Larnaca,Cyprus,34.916667,33.65
+48015.0,Ras Shukhier,Egypt,28.133333,33.283333
+48025.0,Ras Badran Oil Terminal,Egypt,28.95,33.166667
+48065.0,Wadi Feiran,Egypt,28.75,33.2
+47988.0,Sharm El Sheikh,Egypt,27.85,34.283333
+48053.0,Ras Sudr,Egypt,29.583333,32.7
+48420.0,Khorramshahr,Iran,30.433333,48.183333
+48399.0,Umm Qasr,Iraq,30.016667,47.95
+48460.0,Bandar Khomeyni,Iran,30.433333,49.083333
+47105.0,Kilifi,Kenya,-3.633333,39.866667
+48357.0,Mina Ash Shuaybah,Kuwait,29.033333,48.166667
+48370.0,Al Kuwayt,Kuwait,29.35,47.933333
+47107.0,Malindi,Kenya,-3.216667,40.133333
+48338.0,Al Jubayl,Saudi Arabia,27.083333,49.666667
+48356.0,Mina Az Zawr,Kuwait,28.733333,48.4
+47110.0,Lamu,Kenya,-2.266667,40.9
+48349.0,Ras Al Khafji,Saudi Arabia,28.433333,48.583333
+48340.0,Ras  Tannurah,Saudi Arabia,26.633333,50.166667
+47000.0,Kilwa Kivinje,Tanzania,-8.733333,39.416667
+48325.0,Mina Salman,Bahrain,26.2,50.633333
+48392.0,Al-Basra Oil Terminal,Iraq,29.683333,48.816667
+48300.0,Al Rayyan Terminal,Qatar,26.65,51.55
+48040.0,As Suways,Egypt,29.966667,32.55
+47010.0,Dar Es Salaam,Tanzania,-6.816667,39.3
+45084.0,Hadera,Israel,32.466667,34.9
+48108.0,Duba Bulk Plant Tanker Terminal,Saudi Arabia,27.316667,35.9
+48327.0,Khalifa Bin Salman,Bahrain,26.25,50.75
+47140.0,Baraawe,Somalia,1.1,44.05
+44950.0,Limassol,Cyprus,34.666667,33.05
+45080.0,Haifa,Israel,32.816667,35.0
+48400.0,Al Basrah,Iraq,30.516667,47.833333
+48404.0,Khawr Al Zubair,Iraq,30.183333,47.9
+48430.0,Abadan,Iran,30.333333,48.283333
+48440.0,Khosrowabad,Iran,30.166667,48.416667
+47944.0,Beshayer Oil Terminal,Sudan,19.4,37.316667
+48050.0,El Ismailiya,Egypt,30.583333,32.283333
+45151.0,Damietta,Egypt,31.483333,31.75
+47985.0,Zeit Bay Terminal,Egypt,27.833333,33.6
+48060.0,Ras Abu Zanimah,Egypt,29.033333,33.116667
+48390.0,Khawr Al Amaya,Iraq,29.783333,48.8
+48360.0,Mina Abd Allah,Kuwait,29.016667,48.166667
+48361.0,Mina Al Ahmadi,Kuwait,29.066667,48.166667
+48540.0,Jask,Iran,25.633333,57.766667
+45110.0,Ashqelon,Israel,31.666667,34.5
+48406.0,Khawr Al Zubair Lng Terminal,Iraq,30.133333,47.916667
+48530.0,Jazireh-Ye Hormoz,Iran,27.1,56.45
+48535.0,Jazireh-Ye Sirri,Iran,25.9,54.55
+47160.0,Muqdisho,Somalia,2.033333,45.35
+47150.0,Marka,Somalia,1.716667,44.783333
+48263.0,Khawr Fakkan,United Arab Emirates,25.362777778,56.368888889
+48250.0,Mina Qabus,Oman,23.633333,58.583333
+48255.0,Mina Al Fahl,Oman,23.633333,58.516667
+48335.0,Dammam,Saudi Arabia,26.5,50.2
+48343.0,Ju Aymah Oil Terminal,Saudi Arabia,26.933333,50.033333
+47830.0,Boosaaso,Somalia,11.283333,49.183333
+48310.0,Al Manamah,Bahrain,26.233333,50.583333
+48342.0,Ju Aymah Lpg Terminal,Saudi Arabia,26.866667,50.05
+48374.0,Doha Harbor,Kuwait,29.383333,47.8
+48175.0,Al Mukha,Yemen,13.316667,43.25
+47030.0,Tanga,Tanzania,-5.083333,39.116667
+48240.0,Qalhat Lng Terminal,Oman,22.683333,59.4
+48155.0,Ras Isa Marine Terminal,Yemen,15.133333,42.6
+48267.0,Zirkuh Oil Field,United Arab Emirates,24.866667,53.05
+48320.0,Sitrah,Bahrain,26.166667,50.666667
+48035.0,Sokhna Port Gas Tanker Terminal,Egypt,29.683333,32.366667
+48257.0,Port Of Sohar,Oman,24.516667,56.633333
+45140.0,Bur Sa'id,Egypt,31.266667,32.3
+47960.0,Nuwaybi',Egypt,28.966667,34.65
+47982.0,At Tur,Egypt,28.233333,33.616667
+47987.0,Marsa az Zaytiyah,Egypt,27.85,33.6
+45025.0,Tarabulus,Lebanon,34.45,35.833333
+45003.0,Tartus,Syria,34.9,35.866667
+45030.0,Bayrut,Lebanon,33.9,35.5
+48030.0,North Ain Sukhna Port,Egypt,29.65,32.366667
+47946.0,Sawakin Harbor,Sudan,19.133333,37.35
+47900.0,Mitsiwa Harbor,Eritrea,15.616667,39.466667
+47880.0,Assab,Eritrea,13.0,42.75
+48090.0,Al Aqabah,Jordan,29.516667,35.0
+48045.0,El-Adabiya,Egypt,29.866667,32.466667
+48055.0,Ain Sukhna Terminal,Egypt,29.583333,32.366667
+47940.0,Port Sudan,Sudan,19.6,37.233333
+48140.0,Jiddah,Saudi Arabia,21.483333,39.183333
+48142.0,Jizan,Saudi Arabia,16.9,42.483333
+48165.0,Al Ahmadi,Yemen,14.833333,42.966667
+48190.0,Aden,Yemen,12.783333,44.95
+48214.0,Rudum Terminal,Yemen,13.983333,47.916667
+48235.0,Duqm,Oman,19.673252583,57.716908916
+47850.0,Djibouti,Djibouti,11.6,43.133333
+48210.0,Al Mukalla,Yemen,14.516667,49.116667
+48230.0,Mina Raysut,Oman,16.951111111,54.029166667
+48216.0,Balhaf,Yemen,13.966667,48.183333
+48202.0,Ash Shihr Oil Terminal,Yemen,14.7,49.483333333
+48198.0,Nishtun,Yemen,15.816667,52.2
+48259.0,Khawr Khasab,Oman,26.216667,56.233333
+48520.0,Bandar Abbas,Iran,27.15,56.2
+48590.0,Gwadar,Pakistan,25.133333,62.3
+48280.0,Hulaylah Oil Terminal,United Arab Emirates,25.983333,55.933333
+48264.0,Mina Saqr,United Arab Emirates,25.983333,56.05
+48480.0,Jazireh-Ye Lavan Oil Terminal,Iran,26.783333,53.333333
+48272.0,Sharjah Offshore Terminal,United Arab Emirates,25.583333,55.4
+48273.0,Umm Al Qaywayn,United Arab Emirates,25.583333,55.583333
+48269.0,Al Jazeera Port,United Arab Emirates,25.716667,55.783333
+48276.0,Mina Jabal Ali,United Arab Emirates,25.016667,55.05
+48271.0,Ash Shariqah,United Arab Emirates,25.366666667,55.383333333
+48275.0,Dubayy,United Arab Emirates,25.266666667,55.3
+48270.0,Ajman,United Arab Emirates,25.416667,55.433333
+48274.0,Al Hamriyah Lpg Terminal,United Arab Emirates,25.466667,55.483333
+47855.0,Doraleh,Djibouti,11.602777778,43.088611111
+48121.0,King Fahd Port,Saudi Arabia,23.95,38.216667
+45040.0,Sayda,Lebanon,33.5,35.35
+45036.0,Sidon/zahrani Terminal,Lebanon,33.533333,35.316667
+47050.0,Zanzibar,Tanzania,-6.166667,39.183333
+48120.0,Yanbu,Saudi Arabia,24.083333,38.05
+48348.0,Ras Al Mishab,Saudi Arabia,28.116667,48.633333
+48152.0,Salif,Yemen,15.3,42.666667
+45027.0,Selaata,Lebanon,34.283333333,35.655
+48268.0,Mubarraz Oil Terminal,United Arab Emirates,24.433333,53.516667
+48290.0,Doha,Qatar,25.283333,51.533333
+48266.0,Zirkuh,United Arab Emirates,25.016667,53.0
+48265.0,Fateh Oil Terminal,United Arab Emirates,25.583333,54.416667
+48298.0,Al Shaheen Terminal,Qatar,26.583333,52.0
+48282.0,Jabal Az Zannah/ruways,United Arab Emirates,24.2,52.7
+48295.0,Jazirat Halul,Qatar,25.683333,52.416667
+48279.0,Umm An Nar,United Arab Emirates,24.45,54.483333
+48287.0,Umm Said,Qatar,24.916667,51.566667
+48297.0,Ras Laffan,Qatar,25.916667,51.583333
+48278.0,Abu Zaby,United Arab Emirates,24.5,54.333333
+48277.0,Jazirat Das,United Arab Emirates,25.15,52.866667
+47980.0,Safaja,Egypt,26.733333,33.95
+47970.0,Al Qusayr,Egypt,26.1,34.283333
+48470.0,Bushehr,Iran,28.983333,50.833333
+48533.0,Bandar Taheri Offshore Terminal,Iran,27.65,52.35
+48550.0,Chah Bahar,Iran,25.266667,60.616667
+48464.0,Barkan Oil-loading Terminal,Iran,29.733333,50.166667
+47974.0,Hamrawein,Egypt,26.25,34.2
+48475.0,Bandar-E Pars Terminal,Iran,27.533333,52.533333
+48106.0,Duba,Saudi Arabia,27.566667,35.533333
+45163.0,El Maadiya,Egypt,31.266667,30.15
+48468.0,Sirus Oil Terminal,Iran,29.016667,49.483333
+48130.0,Rabigh,Saudi Arabia,22.733333,38.983333
+45164.0,Abu Qir,Egypt,31.323997974,30.078534364
+47820.0,Berbera,Somalia,10.45,45.016667
+45120.0,Al Arish,Egypt,31.152045051,33.831078335
+47220.0,Victoria,Seychelles,-4.616667,55.45
+48495.0,Bandar-E Shahid Rejaie,Iran,27.1,56.066667
+48288.0,Hamad,Qatar,25.016666667,51.6
+48262.0,Al Fujayrah,United Arab Emirates,25.173055556,56.369166667

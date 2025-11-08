@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "piracy_somalia_2023_2025",
+        "name": "High Risk Area - Somalia & Gulf of Aden (2023-2025 incidents)",
+        "risk_level": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [48.0, -2.0],
+          [66.0, -2.0],
+          [66.0, 13.0],
+          [48.0, 13.0],
+          [48.0, -2.0]
+        ]]
+      }
+    }
+  ]
+}

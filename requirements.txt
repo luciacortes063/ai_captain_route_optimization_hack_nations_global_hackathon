@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+networkx
+numpy
+pandas
+geopandas
+shapely
+xarray
+netCDF4
+haversine
+requests
