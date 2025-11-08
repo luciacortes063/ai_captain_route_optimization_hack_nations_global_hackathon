@@ -16,6 +16,7 @@ from backend.config import (
     WEATHER_GEOJSON_PATH,
     GEBCO_NETCDF_PATH,
     MIN_DEPTH_METERS,
+    INCIDENT_RADIUS_NM
 )
 from backend.models import Port, RiskLayer, RiskFeature
 
@@ -37,7 +38,7 @@ def load_ports_from_wpi() -> Dict[str, Port]:
 
 
 # radio alrededor de un incidente en millas náuticas
-INCIDENT_RADIUS_NM = 150.0  # ajusta a gusto: 100–150nm funciona bien
+ # ajusta a gusto: 100–150nm funciona bien
 
 def load_piracy_zones() -> RiskLayer:
     gdf = gpd.read_file(PIRACY_GEOJSON_PATH)
