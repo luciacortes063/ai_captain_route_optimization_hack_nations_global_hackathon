@@ -7,6 +7,7 @@ from typing import Dict, Optional, List
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware  # ⬅️ NEW
 
 from backend.models import (
     HealthResponse,
@@ -27,7 +28,7 @@ from backend.data_sources import (
 from backend.graph_builder import load_graph, build_grid_graph, save_graph
 from backend.routing import compute_route
 from backend.config import GRAPH_PICKLE_PATH
-from backend.live_weather import update_graph_weather 
+from backend.live_weather import update_graph_weather
 
 
 app = FastAPI(
@@ -63,7 +64,6 @@ def init_app():
 
     PORTS = load_ports_from_wpi()
 
-
     if GRAPH_PICKLE_PATH.exists():
         from backend.graph_builder import load_graph as _load_graph
         GRAPH = _load_graph()
@@ -81,7 +81,6 @@ def init_app():
         update_graph_weather(GRAPH)
     except Exception as exc:
         print(f"[WARN] Could not update live weather on startup: {exc}")
-
 
 
 @app.on_event("startup")
@@ -134,7 +133,12 @@ async def search_ports(
     return PortsSearchResponse(ports=results)
 
 
-@app.get("/ports/{portId}", response_model=Port, responses={404: {"model": ErrorResponse}}, tags=["Ports"])
+@app.get(
+    "/ports/{portId}",
+    response_model=Port,
+    responses={404: {"model": ErrorResponse}},
+    tags=["Ports"],
+)
 async def get_port(portId: str):
     if portId not in PORTS:
         raise HTTPException(
@@ -213,7 +217,7 @@ async def risk_layers(
     if WEATHER_LAYER and (type_list is None or "weather" in type_list):
         layers.append(WEATHER_LAYER)
 
-    # TODO: Add box
+    # TODO: filter by bbox if provided
 
     return RiskLayersResponse(layers=layers)
 

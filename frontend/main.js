@@ -1,5 +1,5 @@
 // =================== CONFIG ===================
-const API_BASE = "http://localhost:8000"; // adjust if needed
+const API_BASE = "http://localhost:8000"; 
 
 // =================== DOM HOOKS ===================
 const originSel   = document.getElementById("origin");
@@ -48,6 +48,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 const CENTER_LNG = bounds.getCenter().lng;
 
+// ---- compute a zoom that fits the region width
 function zoomToFitWidth(m, b, maxZ = 18) {
   const sizeX = m.getSize().x;
   let chosen = 0;
@@ -60,23 +61,35 @@ function zoomToFitWidth(m, b, maxZ = 18) {
   return chosen;
 }
 
+// ---- non-reentrant fit + lock
+let _fitting = false;
 function fitWidthAndLock() {
-  map.invalidateSize();                       // ensure container size is known
-  const z = zoomToFitWidth(map, bounds, 8);   // cap to a sane max (8 looks good for this region)
-  map.setView(bounds.getCenter(), z, { animate: false });
-  map.setMinZoom(z);                          // can't zoom out past width-fit
-  map.setMaxZoom(8);                          // can zoom in
-  map.panInsideBounds(bounds, { animate: false });
-  clampHorizontalAtMinZoom();                 // keep horizontal fixed at min zoom
+  if (_fitting) return;
+  _fitting = true;
+  try {
+    map.invalidateSize();                       
+    const z = zoomToFitWidth(map, bounds, 8);   
+    map.setView(bounds.getCenter(), z, { animate: false });
+    map.setMinZoom(z);                          
+    map.setMaxZoom(8);                          
+    map.panInsideBounds(bounds, { animate: false });
+    clampHorizontalAtMinZoom();                 
+  } finally {
+    setTimeout(() => { _fitting = false; }, 0);
+  }
 }
 
-let isAdjusting = false;
-// Lock horizontal panning at min zoom so left/right edges stay aligned with the screen
+// ---- guarded horizontal clamp at min-zoom
+const _clampBusy = { v: false };
 function clampHorizontalAtMinZoom() {
+  if (_clampBusy.v) return;
   if (map.getZoom() !== map.getMinZoom()) return;
+
   const c = map.getCenter();
-  if (Math.abs(c.lng - CENTER_LNG) > 1e-9) {
+  if (Math.abs(c.lng - CENTER_LNG) > 1e-6) {        // avoid jitter
+    _clampBusy.v = true;
     map.panTo([c.lat, CENTER_LNG], { animate: false });
+    map.once('moveend', () => { _clampBusy.v = false; });
   }
 }
 
@@ -100,17 +113,55 @@ function clearHazards() {
   hazardLayers = [];
 }
 
-function drawRouteFromCoordinates(coords) {
-  if (!Array.isArray(coords) || coords.length < 2) return;
-  if (routeLayer) map.removeLayer(routeLayer);
+// ---- hardened route draw + safe fit
+function drawRouteFromCoordinates(rawCoords) {
+  if (!Array.isArray(rawCoords)) return;
 
+  // sanitize points
+  const coords = [];
+  for (const p of rawCoords) {
+    if (!Array.isArray(p) || p.length < 2) continue;
+    let lat = Number(p[0]);
+    let lng = Number(p[1]);
+
+    // if swapped or bizarre ranges, attempt flip
+    if ((Math.abs(lat) > 90 && Math.abs(lng) <= 90) || Math.abs(lat) > 180) {
+      const t = lat; lat = lng; lng = t;
+    }
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) continue;
+
+    coords.push([lat, lng]);
+  }
+
+  if (coords.length < 2) return;
+
+  if (routeLayer) map.removeLayer(routeLayer);
   routeLayer = L.polyline(coords, { weight: 4, color: "#d00" }).addTo(map);
 
-  // Fit to route but never zoom out below the width-fit level
-  map.fitBounds(L.latLngBounds(coords).pad(0.2), {
-    maxZoom: map.getMaxZoom()
-  });
-  clampHorizontalAtMinZoom();
+  let b = L.latLngBounds(coords);
+  // protect degenerate bounds
+  if (b.getNorth() === b.getSouth() || b.getEast() === b.getWest()) {
+    b = b.pad(0.0001);
+  }
+  // keep within global region
+  if (!bounds.intersects(b)) {
+    b = L.latLngBounds([
+      b.getSouthWest(), b.getNorthEast(),
+      bounds.getSouthWest(), bounds.getNorthEast()
+    ]);
+  }
+
+  try {
+    map.fitBounds(b.pad(0.2), { maxZoom: map.getMaxZoom() });
+  } catch (err) {
+    console.error("fitBounds failed for route bounds:", b, err);
+    return;
+  }
+
+  // defer clamp to avoid immediate re-entrancy after fit
+  setTimeout(() => clampHorizontalAtMinZoom(), 0);
 }
 
 function drawRiskLayers(layers) {
@@ -129,9 +180,27 @@ function drawRiskLayers(layers) {
 async function apiGet(path, params = {}) {
   const url = new URL(path, API_BASE);
   Object.entries(params).forEach(([k,v]) => v!=null && url.searchParams.set(k, v));
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+
+  let res;
+  try {
+    res = await fetch(url.toString());
+  } catch (e) {
+    console.error(`[GET ${url}] Network error:`, e);
+    throw new Error(`Network error calling ${url}`);
+  }
+
+  const text = await res.text();   // read raw text first
+  if (!res.ok) {
+    console.error(`[GET ${url}] HTTP ${res.status}:`, text);
+    throw new Error(text || `GET ${url} failed with ${res.status}`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error(`[GET ${url}] Invalid JSON:`, text);
+    throw new Error(`Invalid JSON from ${url}`);
+  }
 }
 
 async function apiPost(path, body) {

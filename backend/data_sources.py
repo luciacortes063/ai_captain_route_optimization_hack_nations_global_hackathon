@@ -8,6 +8,7 @@ import pandas as pd
 import geopandas as gpd
 import xarray as xr
 from shapely.geometry import shape, mapping, Point
+import math
 
 from backend.config import (
     WPI_CSV_PATH,
@@ -34,6 +35,10 @@ def load_ports_from_wpi() -> Dict[str, Port]:
     return ports
 
 
+
+# radio alrededor de un incidente en millas náuticas
+INCIDENT_RADIUS_NM = 150.0  # ajusta a gusto: 100–150nm funciona bien
+
 def load_piracy_zones() -> RiskLayer:
     gdf = gpd.read_file(PIRACY_GEOJSON_PATH)
     features: List[RiskFeature] = []
@@ -42,11 +47,26 @@ def load_piracy_zones() -> RiskLayer:
         geom = row.geometry
         if geom is None:
             continue
+
+        risk_level = int(row.get("risk_level", 3))
+
+        polygons = []
+
         if geom.geom_type == "Polygon":
             polygons = [geom]
+
         elif geom.geom_type == "MultiPolygon":
             polygons = list(geom.geoms)
+
+        elif geom.geom_type == "Point":
+            # Aproximación rápida: 1º lat ~ 60nm
+            radius_deg = INCIDENT_RADIUS_NM / 60.0
+            # buffer en grados (círculo “gordo” alrededor del incidente)
+            buffered = geom.buffer(radius_deg)
+            polygons = [buffered]
+
         else:
+            # ignoramos otros tipos
             continue
 
         for poly in polygons:
@@ -55,14 +75,14 @@ def load_piracy_zones() -> RiskLayer:
                 RiskFeature(
                     id=str(row.get("id", row.get("name", "piracy_zone"))),
                     polygon=coords,
-                    riskLevel=int(row.get("risk_level", 3)),
+                    riskLevel=risk_level,
                     severity=None,
                 )
             )
 
     return RiskLayer(
         type="piracy",
-        name="Piracy High Risk Areas (ICC-derived)",
+        name="Piracy High Risk Areas (bbox + incidents)",
         features=features,
     )
 
