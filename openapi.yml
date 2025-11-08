@@ -1,0 +1,562 @@
+openapi: 3.0.3
+info:
+  title: AI Captain Route Optimization API
+  version: 0.1.0
+  description: >
+    API for maritime route optimization considering weather, piracy and other risk layers.
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Check if the service is running and the graph is loaded.
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ports:
+    get:
+      tags:
+        - Ports
+      summary: List ports
+      description: Get a paginated list of available ports.
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+          description: Maximum number of ports to return.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of ports to skip.
+      responses:
+        '200':
+          description: List of ports
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortsListResponse'
+
+  /ports/search:
+    get:
+      tags:
+        - Ports
+      summary: Search ports
+      description: Search ports by name, id, or country for autocomplete.
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+          description: Search query string.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          description: Maximum number of ports to return.
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortsSearchResponse'
+
+  /ports/{portId}:
+    get:
+      tags:
+        - Ports
+      summary: Get port by id
+      description: Get detailed information about a specific port.
+      parameters:
+        - in: path
+          name: portId
+          required: true
+          schema:
+            type: string
+          description: Port identifier.
+      responses:
+        '200':
+          description: Port details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port'
+        '404':
+          description: Port not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /route:
+    post:
+      tags:
+        - Routing
+      summary: Compute optimal route
+      description: Compute an optimal maritime route between origin and destination given mode and constraints.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteRequest'
+      responses:
+        '200':
+          description: Computed route
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Unprocessable entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /risk-layers:
+    get:
+      tags:
+        - Risk
+      summary: Get risk layers
+      description: Retrieve polygons representing piracy, weather and other risk areas for visualization.
+      parameters:
+        - in: query
+          name: types
+          schema:
+            type: string
+          description: >
+            Comma-separated list of risk layer types to return (e.g. "piracy,weather").
+            If omitted, all layers are returned.
+        - in: query
+          name: bbox
+          schema:
+            type: string
+          description: >
+            Optional bounding box to filter features, formatted as
+            "minLon,minLat,maxLon,maxLat".
+      responses:
+        '200':
+          description: Risk layers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskLayersResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        graph_loaded:
+          type: boolean
+          example: true
+        version:
+          type: string
+          example: 0.1.0
+      required:
+        - status
+        - graph_loaded
+        - version
+
+    Port:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique port identifier.
+          example: RTM
+        name:
+          type: string
+          example: Port of Rotterdam
+        country:
+          type: string
+          example: Netherlands
+        latitude:
+          type: number
+          format: double
+          example: 51.95
+        longitude:
+          type: number
+          format: double
+          example: 4.13
+      required:
+        - id
+        - name
+        - country
+        - latitude
+        - longitude
+
+    PortsListResponse:
+      type: object
+      properties:
+        ports:
+          type: array
+          items:
+            $ref: '#/components/schemas/Port'
+        count:
+          type: integer
+          example: 2
+        total:
+          type: integer
+          example: 231
+        limit:
+          type: integer
+          example: 100
+        offset:
+          type: integer
+          example: 0
+      required:
+        - ports
+        - count
+        - total
+        - limit
+        - offset
+
+    PortsSearchResponse:
+      type: object
+      properties:
+        ports:
+          type: array
+          items:
+            $ref: '#/components/schemas/Port'
+      required:
+        - ports
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        error:
+          type: string
+          example: INVALID_REQUEST
+        message:
+          type: string
+          example: Origin or destination not found
+      required:
+        - status
+        - error
+        - message
+
+    OriginDestination:
+      type: object
+      description: >
+        Origin or destination definition. If type is "port", portId must be provided.
+        If type is "coordinates", latitude and longitude must be provided.
+      properties:
+        type:
+          type: string
+          enum: [port, coordinates]
+          example: port
+        portId:
+          type: string
+          nullable: true
+          example: SGP
+        latitude:
+          type: number
+          format: double
+          nullable: true
+          example: 1.26
+        longitude:
+          type: number
+          format: double
+          nullable: true
+          example: 103.84
+      required:
+        - type
+
+    RouteConstraints:
+      type: object
+      properties:
+        maxDraftMeters:
+          type: number
+          format: double
+          nullable: true
+          description: Maximum vessel draft in meters.
+          example: 15.0
+        maxPiracyRisk:
+          type: integer
+          nullable: true
+          description: >
+            Maximum allowed piracy risk level (e.g. 0-3).
+          example: 2
+        departureTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO 8601 departure time, potentially used for time-dependent data.
+          example: 2025-11-10T12:00:00Z
+
+    RouteRequest:
+      type: object
+      properties:
+        origin:
+          $ref: '#/components/schemas/OriginDestination'
+        destination:
+          $ref: '#/components/schemas/OriginDestination'
+        mode:
+          type: string
+          description: Route optimization mode.
+          enum: [safe, fast, balanced]
+          example: safe
+        constraints:
+          $ref: '#/components/schemas/RouteConstraints'
+      required:
+        - origin
+        - destination
+        - mode
+
+    RouteSummary:
+      type: object
+      properties:
+        originPortId:
+          type: string
+          nullable: true
+          example: SGP
+        destinationPortId:
+          type: string
+          nullable: true
+          example: RTM
+        mode:
+          type: string
+          enum: [safe, fast, balanced]
+          example: safe
+        totalDistanceNm:
+          type: number
+          format: double
+          description: Total distance in nautical miles.
+          example: 9800.5
+        estimatedDurationHours:
+          type: number
+          format: double
+          description: Estimated total travel time in hours.
+          example: 480.0
+        totalWeatherRisk:
+          type: number
+          format: double
+          example: 12.5
+        totalPiracyRisk:
+          type: number
+          format: double
+          example: 3.0
+        totalDepthPenalty:
+          type: number
+          format: double
+          example: 0.0
+      required:
+        - mode
+        - totalDistanceNm
+        - estimatedDurationHours
+        - totalWeatherRisk
+        - totalPiracyRisk
+        - totalDepthPenalty
+
+    RouteSegment:
+      type: object
+      properties:
+        from:
+          type: array
+          description: Coordinate [latitude, longitude].
+          items:
+            type: number
+            format: double
+          minItems: 2
+          maxItems: 2
+          example: [1.26, 103.84]
+        to:
+          type: array
+          description: Coordinate [latitude, longitude].
+          items:
+            type: number
+            format: double
+          minItems: 2
+          maxItems: 2
+          example: [5.01, 95.32]
+        distanceNm:
+          type: number
+          format: double
+          description: Segment distance in nautical miles.
+          example: 500.0
+        weatherRisk:
+          type: number
+          format: double
+          example: 2.0
+        piracyRisk:
+          type: number
+          format: double
+          example: 1.0
+        depthPenalty:
+          type: number
+          format: double
+          example: 0.0
+      required:
+        - from
+        - to
+        - distanceNm
+        - weatherRisk
+        - piracyRisk
+        - depthPenalty
+
+    RoutePath:
+      type: object
+      properties:
+        coordinates:
+          type: array
+          description: >
+            List of coordinates [latitude, longitude] describing the route polyline.
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            minItems: 2
+            maxItems: 2
+          example:
+            - [1.26, 103.84]
+            - [5.01, 95.32]
+            - [12.45, 55.23]
+            - [20.12, 40.50]
+            - [51.95, 4.13]
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteSegment'
+      required:
+        - coordinates
+        - segments
+
+    RouteExplanation:
+      type: object
+      properties:
+        highLevel:
+          type: array
+          items:
+            type: string
+          example:
+            - Route avoids 2 high-piracy zones in the Gulf of Aden.
+            - Route detours north to avoid an area of severe storms.
+        tradeoffs:
+          type: array
+          items:
+            type: string
+          example:
+            - The selected route is 300 nm longer than the shortest path.
+            - Estimated arrival is 12 hours later but significantly safer.
+      required:
+        - highLevel
+        - tradeoffs
+
+    RouteResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        summary:
+          $ref: '#/components/schemas/RouteSummary'
+        path:
+          $ref: '#/components/schemas/RoutePath'
+        explanation:
+          $ref: '#/components/schemas/RouteExplanation'
+      required:
+        - status
+        - summary
+        - path
+        - explanation
+
+    RiskFeature:
+      type: object
+      properties:
+        id:
+          type: string
+          example: piracy_zone_1
+        polygon:
+          type: array
+          description: >
+            List of coordinates [latitude, longitude] forming a closed polygon.
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            minItems: 2
+            maxItems: 2
+          example:
+            - [13.0, 48.0]
+            - [16.0, 48.0]
+            - [16.0, 52.0]
+            - [13.0, 52.0]
+            - [13.0, 48.0]
+        riskLevel:
+          type: integer
+          nullable: true
+          description: Generic risk level (e.g. 0-3) for piracy or other layers.
+          example: 3
+        severity:
+          type: integer
+          nullable: true
+          description: Severity level (e.g. 0=calm, 1=moderate, 2=severe) for weather.
+          example: 2
+      required:
+        - id
+        - polygon
+
+    RiskLayer:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Risk layer type.
+          example: piracy
+        name:
+          type: string
+          example: High Risk Area - Gulf of Aden
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskFeature'
+      required:
+        - type
+        - name
+        - features
+
+    RiskLayersResponse:
+      type: object
+      properties:
+        layers:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskLayer'
+      required:
+        - layers
