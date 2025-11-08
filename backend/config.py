@@ -20,15 +20,15 @@ GEBCO_NETCDF_PATH = DATA_DIR / "gebco_bathymetry.nc"
 GRAPH_PICKLE_PATH = DATA_DIR / "maritime_graph.pkl"
 
 # Grid resolution
-GRID_LAT_STEP = 0.5
-GRID_LON_STEP = 0.5
+GRID_LAT_STEP = 0.1
+GRID_LON_STEP = 0.1
 
 # Weights
 LAMBDA_PIRACY = 200.0
 LAMBDA_WEATHER = 100.0
 LAMBDA_DEPTH = 500.0
 
-MIN_DEPTH_METERS = 20.0
+MIN_DEPTH_METERS = 20
 
 # Live weather
 WEATHER_API_BASE_URL = "https://marine-api.open-meteo.com/v1/marine"

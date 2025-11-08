@@ -119,3 +119,12 @@ def get_depth_at(ds: xr.Dataset, lat: float, lon: float) -> float:
 def is_shallow(ds: xr.Dataset, lat: float, lon: float, min_depth: float = MIN_DEPTH_METERS) -> bool:
     depth = get_depth_at(ds, lat, lon)
     return depth < min_depth
+
+def is_land(ds: xr.Dataset, lat: float, lon: float) -> bool:
+    """
+    Devuelve True si la celda corresponde a tierra (elevación >= 0).
+    """
+    depth_value = ds["elevation"].sel(lat=lat, lon=lon, method="nearest").values.item()
+    # GEBCO: valores positivos o cero = tierra / costa
+    return float(depth_value) >= 5.0
+

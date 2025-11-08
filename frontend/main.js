@@ -70,6 +70,7 @@ function fitWidthAndLock() {
   clampHorizontalAtMinZoom();                 // keep horizontal fixed at min zoom
 }
 
+let isAdjusting = false;
 // Lock horizontal panning at min zoom so left/right edges stay aligned with the screen
 function clampHorizontalAtMinZoom() {
   if (map.getZoom() !== map.getMinZoom()) return;
@@ -79,6 +80,8 @@ function clampHorizontalAtMinZoom() {
   }
 }
 
+map.on("moveend", clampHorizontalAtMinZoom);
+map.on("zoomend", clampHorizontalAtMinZoom);
 setTimeout(fitWidthAndLock, 0);
 map.whenReady(fitWidthAndLock);
 window.addEventListener("resize", fitWidthAndLock);
