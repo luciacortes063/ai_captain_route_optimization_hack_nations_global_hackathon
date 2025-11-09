@@ -3,11 +3,9 @@ from __future__ import annotations
 from typing import Optional, Tuple, Dict
 import math
 import logging
-import random
 
 import networkx as nx
 import requests
-import json
 
 from backend.config import (
     WEATHER_API_BASE_URL,
@@ -20,7 +18,6 @@ from backend.config import (
 
 logger = logging.getLogger(__name__)
 
-# Keep API load modest for demos
 MAX_WEATHER_CELLS = 10000
 
 
@@ -158,11 +155,10 @@ def build_weather_risk_layer(G: nx.Graph, max_cells: int = 300, scale: float = 1
         if not vals:
             continue
         avg = sum(vals) / len(vals)
-        if avg <= 0.0:        # 🔴 filter zero-risk cells
+        if avg <= 0.0:        
             continue
         cells.append((avg, clat, clon))
 
-    # show the highest-risk cells first, cap for perf
     cells.sort(reverse=True)
     cells = cells[:max_cells]
 
@@ -181,7 +177,7 @@ def build_weather_risk_layer(G: nx.Graph, max_cells: int = 300, scale: float = 1
         )
 
     return RiskLayer(
-        type="weather",   # reuse 'weather' so your frontend draws it
+        type="weather",  
         name="Live Weather (aggregated, circular)",
         features=features,
     )

@@ -25,6 +25,10 @@ from haversine import haversine
 
 
 def build_risk_polygons():
+    """
+    Precompute shapely polygons + levels for piracy and weather layers.
+    Note: input polygons are [lat, lon]; shapely expects [lon, lat].
+    """
     piracy_layer: RiskLayer = load_piracy_zones()
     weather_layer: RiskLayer = load_weather_zones()
 
@@ -48,7 +52,9 @@ def compute_node_risks(
     bathy_ds,
 ) -> Tuple[int, int, float]:
     """
-    Returns (piracy_risk, weather_risk, depth_penalty) per node
+    Return (piracy_risk, weather_risk, depth_penalty) for a single node.
+    - piracy/weather: max value among polygons containing the point
+    - depth_penalty: 1.0 if shallow, else 0.0
     """
     point = Point(lon, lat)
 
@@ -73,19 +79,17 @@ def build_grid_graph(
     lon_range: Tuple[float, float],
 ) -> Tuple[nx.Graph, RiskLayer, RiskLayer]:
     """
-    Construye el grafo de celdas marítimas, anotando:
-      - piracy_risk
-      - weather_risk
-      - depth_penalty
-      - geo_base_risk
-      - geo_target_flags (dict ISO3 -> extra risk)
+    Build a sea-grid graph with node attributes:
+      - piracy_risk, weather_risk, depth_penalty
+      - geo_base_risk, geo_target_flags (ISO3 → extra risk)
+    Edges carry geodesic distance in nautical miles.
     """
 
     G = nx.Graph()
     bathy_ds = load_bathymetry()
     piracy_layer, weather_layer, piracy_polygons, weather_polygons = build_risk_polygons()
 
-    # Zonas geopolíticas (polígonos + riesgos)
+    # Geopolitics polygons + risk metadata
     geopolitics_layer, geopolitics_polygons, _aliases = load_geopolitics_config()
 
     lat_min, lat_max = lat_range
@@ -94,10 +98,10 @@ def build_grid_graph(
     lat_values = np.arange(lat_min, lat_max + GRID_LAT_STEP, GRID_LAT_STEP)
     lon_values = np.arange(lon_min, lon_max + GRID_LON_STEP, GRID_LON_STEP)
 
-    # create nodes
+    # ── Nodes: only water cells; attach risks
     for lat in lat_values:
         for lon in lon_values:
-            # avoid land nodes
+            # skip land cells early
             if is_land(bathy_ds, float(lat), float(lon)):
                 continue
 
@@ -111,15 +115,13 @@ def build_grid_graph(
 
             point = Point(float(lon), float(lat))
 
-            # --- riesgo geopolítico por nodo ---
+            # Geopolitics at node: max base risk + max per-target extra
             geo_base_risk = 0.0
             geo_target_flags: Dict[str, float] = {}
-
             for poly, base_risk, target_flags, *_ in geopolitics_polygons:
                 if poly.contains(point):
                     if base_risk > geo_base_risk:
                         geo_base_risk = base_risk
-                    # agregamos max extra por bandera
                     for iso3, extra in target_flags.items():
                         prev = geo_target_flags.get(iso3, 0.0)
                         if extra > prev:
@@ -137,11 +139,10 @@ def build_grid_graph(
                 geo_target_flags=geo_target_flags,
             )
 
-    # Edges are geodesic distances
+    # ── Edges: 4-neighborhood (N/S/E/W) with geodesic distance in NM
     for lat in lat_values:
         for lon in lon_values:
             node_id = f"{lat:.3f},{lon:.3f}"
-
             if node_id not in G.nodes:
                 continue
 
@@ -164,6 +165,7 @@ def build_grid_graph(
 
 
 def save_graph(G: nx.Graph):
+    """Persist graph to disk (pickle)."""
     import pickle
 
     GRAPH_PICKLE_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -172,6 +174,7 @@ def save_graph(G: nx.Graph):
 
 
 def load_graph() -> nx.Graph:
+    """Load graph from disk (pickle)."""
     import pickle
 
     with open(GRAPH_PICKLE_PATH, "rb") as f:

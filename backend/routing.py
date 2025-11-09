@@ -5,6 +5,7 @@ from typing import Dict, Tuple, List
 import networkx as nx
 from haversine import haversine
 
+# Note: LAMBDA_* constants are currently unused; kept for future tuning via config.
 from backend.config import LAMBDA_PIRACY, LAMBDA_WEATHER, LAMBDA_DEPTH, LAMBDA_TRAFFIC, LAMBDA_GEO
 from backend.models import (
     RouteRequest,
@@ -19,6 +20,7 @@ from backend.geopolitics import infer_vessel_iso3_from_origin_country, get_zone_
 
 
 def find_closest_node(G: nx.Graph, lat: float, lon: float) -> str:
+    """Return the node id closest (haversine) to (lat, lon)."""
     best_node = None
     best_dist = float("inf")
     for node_id, data in G.nodes(data=True):
@@ -31,6 +33,7 @@ def find_closest_node(G: nx.Graph, lat: float, lon: float) -> str:
 
 
 def get_coordinates_of_node(G: nx.Graph, node_id: str) -> Tuple[float, float]:
+    """Convenience getter for node coordinates."""
     data = G.nodes[node_id]
     return data["lat"], data["lon"]
 
@@ -39,6 +42,7 @@ def _resolve_origin_or_destination(
     od,
     ports: Dict[str, Port],
 ) -> Tuple[float, float]:
+    """Normalize origin/destination to a concrete (lat, lon)."""
     if od.type == "port":
         if od.portId not in ports:
             raise ValueError(f"Port {od.portId} not found")
@@ -52,8 +56,8 @@ def _resolve_origin_or_destination(
 
 def _infer_vessel_iso3(route_request: RouteRequest, ports: Dict[str, Port]) -> str | None:
     """
-    Asume que el barco está afiliado al país del puerto de origen.
-    Usa los country_aliases definidos en geopolitics_config.geojson.
+    Infer vessel nationality (ISO3) from origin port's country.
+    Uses country_aliases defined in geopolitics_config.geojson.
     """
     if route_request.origin.type != "port":
         return None
@@ -66,6 +70,10 @@ def _infer_vessel_iso3(route_request: RouteRequest, ports: Dict[str, Port]) -> s
 
 
 def build_weight_function(mode: str, G: nx.Graph, vessel_iso3: str | None):
+    """
+    Build edge weight function for routing.
+    Mode sets scalar trade-offs between distance and risk terms.
+    """
 
     if mode == "fast":
         lambda_p = 0.0
@@ -87,6 +95,7 @@ def build_weight_function(mode: str, G: nx.Graph, vessel_iso3: str | None):
         lambda_geo = 4.0
 
     def geopolitical_node_penalty(node_id: str) -> float:
+        """Base geopolitics + targeted penalty for vessel ISO3."""
         node_data = G.nodes[node_id]
         base = float(node_data.get("geo_base_risk", 0.0))
         if vessel_iso3 is None:
@@ -96,6 +105,7 @@ def build_weight_function(mode: str, G: nx.Graph, vessel_iso3: str | None):
         return base + extra
 
     def weight(u: str, v: str, attrs: dict) -> float:
+        """Edge cost = distance + weighted average risks of endpoints."""
         dist_nm = attrs.get("distance_nm", 1.0)
 
         piracy_u = G.nodes[u]["piracy_risk"]
@@ -130,6 +140,7 @@ def build_weight_function(mode: str, G: nx.Graph, vessel_iso3: str | None):
 
 
 def build_explanation(summary: RouteSummary, mode: str, route_alerts: List[str] | None = None) -> RouteExplanation:
+    """Produce human-readable rationale + trade-offs from the summary."""
     high_level: List[str] = []
     tradeoffs: List[str] = []
 
@@ -182,7 +193,7 @@ def build_explanation(summary: RouteSummary, mode: str, route_alerts: List[str] 
             "The chosen route may cross higher-risk regions (including geopolitical tension zones and busy choke points) to shorten distance and time."
         )
 
-    # Añadimos las alertas como líneas separadas (el frontend las mostrará como pills)
+    # Append route alerts (frontend will render them as pills)
     if route_alerts:
         for alert in route_alerts:
             tradeoffs.append(alert)
@@ -199,7 +210,9 @@ def compute_route(
     ports: Dict[str, Port],
     default_speed_knots: float = 20.0,
 ) -> RouteResponse:
+    """Compute path, summarize risks, build explanation and response payload."""
 
+    # Resolve user-specified endpoints → nearest graph nodes
     origin_lat, origin_lon = _resolve_origin_or_destination(
         route_request.origin, ports
     )
@@ -210,12 +223,15 @@ def compute_route(
     origin_node = find_closest_node(G, origin_lat, origin_lon)
     dest_node = find_closest_node(G, dest_lat, dest_lon)
 
+    # Vessel ISO3 may alter geopolitical penalties
     vessel_iso3 = _infer_vessel_iso3(route_request, ports)
     weight_fn = build_weight_function(route_request.mode, G, vessel_iso3)
 
+    # Shortest path under custom weight
     path_nodes: List[str] = nx.shortest_path(G, origin_node, dest_node, weight=weight_fn)
 
     def node_geopolitical_penalty(node_id: str) -> float:
+        """Same as above but local to this scope."""
         node_data = G.nodes[node_id]
         base = float(node_data.get("geo_base_risk", 0.0))
         if vessel_iso3 is None:
@@ -229,7 +245,7 @@ def compute_route(
 
     total_distance_nm = 0.0
 
-    # acumuladores para riesgo ponderado por distancia
+    # Distance-weighted risk accumulators
     sum_piracy_len = 0.0
     sum_weather_len = 0.0
     sum_depth_len = 0.0
@@ -240,6 +256,7 @@ def compute_route(
 
     last_lat, last_lon = None, None
 
+    # Walk the path and build segments + accumulate risks
     for idx, node_id in enumerate(path_nodes):
         lat, lon = get_coordinates_of_node(G, node_id)
         coordinates.append([lat, lon])
@@ -293,7 +310,7 @@ def compute_route(
 
         last_lat, last_lon = lat, lon
 
-    # medias normalizadas (ponderadas por distancia)
+    # Distance-weighted averages
     if total_distance_nm > 0:
         avg_piracy = sum_piracy_len / total_distance_nm
         avg_weather = sum_weather_len / total_distance_nm
@@ -303,7 +320,9 @@ def compute_route(
     else:
         avg_piracy = avg_weather = avg_depth = avg_traffic = avg_geo = 0.0
 
-    estimated_duration_hours = total_distance_nm / default_speed_knots if default_speed_knots > 0 else 0.0
+    estimated_duration_hours = (
+        total_distance_nm / default_speed_knots if default_speed_knots > 0 else 0.0
+    )
 
     origin_port_id = route_request.origin.portId if route_request.origin.type == "port" else None
     dest_port_id = (
@@ -323,11 +342,10 @@ def compute_route(
         totalGeopoliticalRisk=avg_geo,
     )
 
-        # Construir alertas de ruta en función de las zonas geopolíticas visitadas
+    # Build route alerts from visited geopolitical zones
     route_alerts: List[str] = []
     if visited_geo_zones:
         meta = get_zone_metadata()
-
         for zid in sorted(visited_geo_zones):
             m = meta.get(zid)
             if not m:
@@ -336,13 +354,12 @@ def compute_route(
             notes = m.get("notes", "").strip()
 
             if notes:
-                # Una alerta por zona con notas
+                # One alert per zone with notes
                 alert_text = f"Route Alert: {name} –> {notes}"
             else:
                 alert_text = f"Route Alert: {name}"
 
             route_alerts.append(alert_text)
-
 
     explanation = build_explanation(summary, route_request.mode, route_alerts)
 
