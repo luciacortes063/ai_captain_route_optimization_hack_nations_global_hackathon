@@ -27,8 +27,12 @@ from backend.data_sources import (
 )
 from backend.graph_builder import load_graph, build_grid_graph, save_graph
 from backend.routing import compute_route
-from backend.config import GRAPH_PICKLE_PATH
+from backend.config import GRAPH_PICKLE_PATH, AIS_LAT_RANGE, AIS_LON_RANGE
 from backend.live_weather import update_graph_weather
+from backend.ais_traffic import update_graph_traffic_from_ais, build_traffic_layer_from_graph
+
+
+
 
 
 app = FastAPI(
@@ -57,6 +61,8 @@ PORTS: Dict[str, Port] = {}
 GRAPH = None
 PIRACY_LAYER: Optional[RiskLayer] = None
 WEATHER_LAYER: Optional[RiskLayer] = None
+TRAFFIC_LAYER: Optional[RiskLayer] = None
+
 
 
 def init_app():
@@ -82,10 +88,25 @@ def init_app():
     except Exception as exc:
         print(f"[WARN] Could not update live weather on startup: {exc}")
 
+    
 
 @app.on_event("startup")
 async def startup_event():
+    global TRAFFIC_LAYER
+
+    # Carga síncrona de todo (puertos, grafo, weather estática, etc.)
     init_app()
+
+    # Ahora, actualización asíncrona del tráfico AIS
+    try:
+        await update_graph_traffic_from_ais(GRAPH, AIS_LAT_RANGE, AIS_LON_RANGE, duration_sec=15.0)
+        # Crear RiskLayer de tráfico a partir del grafo
+        TRAFFIC_LAYER = build_traffic_layer_from_graph(GRAPH)
+    except Exception as exc:
+        print(f"[WARN] Could not update AIS traffic on startup: {exc}")
+        TRAFFIC_LAYER = None
+        print(f"[WARN] Could not update AIS traffic on startup: {exc}")
+
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
@@ -217,9 +238,14 @@ async def risk_layers(
     if WEATHER_LAYER and (type_list is None or "weather" in type_list):
         layers.append(WEATHER_LAYER)
 
+    # ⬇⬇⬇ NUEVO: capa de tráfico
+    if TRAFFIC_LAYER and (type_list is None or "traffic" in type_list):
+        layers.append(TRAFFIC_LAYER)
+
     # TODO: filter by bbox if provided
 
     return RiskLayersResponse(layers=layers)
+
 
 
 if __name__ == "__main__":

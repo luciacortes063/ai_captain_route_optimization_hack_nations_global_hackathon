@@ -5,7 +5,7 @@ from typing import Dict, Tuple, List
 import networkx as nx
 from haversine import haversine
 
-from backend.config import LAMBDA_PIRACY, LAMBDA_WEATHER, LAMBDA_DEPTH
+from backend.config import LAMBDA_PIRACY, LAMBDA_WEATHER, LAMBDA_DEPTH, LAMBDA_TRAFFIC
 from backend.models import (
     RouteRequest,
     RouteResponse,
@@ -38,43 +38,51 @@ def get_coordinates_of_node(G: nx.Graph, node_id: str) -> Tuple[float, float]:
 def build_weight_function(mode: str, G: nx.Graph):
 
     if mode == "fast":
-        lambda_p = 0.0  
-        lambda_w = 0.0  
-        lambda_d = 1.0  
+        lambda_p = 0.0
+        lambda_w = 0.0
+        lambda_d = 1.0
+        lambda_t = 0.5   # tráfico pesa poco
+
     elif mode == "safe":
         lambda_p = 50.0
         lambda_w = 6.0
         lambda_d = 30.0
-    else:  
-        lambda_p = 5
+        lambda_t = 10.0  # tráfico pesa bastante
+
+    else:  # balanced
+        lambda_p = 10.0
         lambda_w = 3.0
         lambda_d = 10.0
-        
-
+        lambda_t = 4.0
 
     def weight(u: str, v: str, attrs: dict) -> float:
         dist_nm = attrs.get("distance_nm", 1.0)
- 
+
         piracy_u = G.nodes[u]["piracy_risk"]
         piracy_v = G.nodes[v]["piracy_risk"]
         weather_u = G.nodes[u]["weather_risk"]
         weather_v = G.nodes[v]["weather_risk"]
         depth_u = G.nodes[u]["depth_penalty"]
         depth_v = G.nodes[v]["depth_penalty"]
+        traffic_u = G.nodes[u].get("traffic_risk", 0)
+        traffic_v = G.nodes[v].get("traffic_risk", 0)
 
         piracy_avg = (piracy_u + piracy_v) / 2.0
         weather_avg = (weather_u + weather_v) / 2.0
         depth_avg = (depth_u + depth_v) / 2.0
+        traffic_avg = (traffic_u + traffic_v) / 2.0
 
         cost = (
             dist_nm
             + lambda_p * piracy_avg
             + lambda_w * weather_avg
             + lambda_d * depth_avg
+            + lambda_t * traffic_avg
         )
         return cost
 
     return weight
+
 
 
 def compute_route(

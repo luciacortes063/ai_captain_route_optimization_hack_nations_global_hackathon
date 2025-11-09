@@ -200,14 +200,29 @@ function drawRouteFromCoordinates(rawCoords) {
 function drawRiskLayers(layers) {
   clearHazards();
   for (const layer of layers || []) {
-    const color = layer.type === "piracy" ? "orange" : "deepskyblue";
+    let color;
+    if (layer.type === "piracy") color = "orange";
+    else if (layer.type === "weather") color = "deepskyblue";
+    else if (layer.type === "traffic") color = "gray";  // morado tráfico
+    else color = "pink";
+
     for (const f of layer.features || []) {
-      const poly = L.polygon(f.polygon, { color, weight: 1, fillOpacity: 0.25 });
+      const risk = f.riskLevel ?? f.severity ?? 0;
+
+      // Un poco más opaco si es riesgo alto
+      let fillOpacity = 0.25;
+      if (layer.type === "traffic") {
+        if (risk >= 2) fillOpacity = 0.45;
+        else if (risk === 1) fillOpacity = 0.3;
+      }
+
+      const poly = L.polygon(f.polygon, { color, weight: 1, fillOpacity });
       poly.addTo(map);
       hazardLayers.push(poly);
     }
   }
 }
+
 
 // =================== API HELPERS ===================
 async function apiGet(path, params = {}) {
@@ -287,6 +302,7 @@ async function loadPorts() {
 async function loadRiskLayers() {
   try {
     const data = await apiGet("/risk-layers");
+    console.log("risk layers from API:", data); 
     drawRiskLayers(data?.layers ?? []);
   } catch {
     clearHazards();
