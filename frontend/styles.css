@@ -46,6 +46,7 @@ button#btn{
 .chip-route{ background:#d00; }
 .chip-piracy{ background:orange; opacity:.6; }
 .chip-storm{ background:deepskyblue; opacity:.5; }
+.chip-traffic{ background:gray; opacity:.6; }
 
 #map{ height:100%; width:100%; }
 

@@ -1,4 +1,8 @@
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 
 BASE_DIR = Path(__file__).resolve().parent  
 PROJECT_ROOT = BASE_DIR.parent       
@@ -42,3 +46,18 @@ WEATHER_CELL_SIZE_DEG = 2.0
 WAVE_HEIGHT_THRESHOLDS_M = (1.5, 3.0)
 
 INCIDENT_RADIUS_NM = 50.0 
+
+# --- Traffic / AIS ---
+
+# Tamaño de las celdas para el tráfico (puedes usar 0.5 o 1.0 para menos ruido)
+TRAFFIC_CELL_SIZE_DEG = 1.0
+
+# Peso del tráfico en la función de coste
+LAMBDA_TRAFFIC = 5.0
+
+# API key para AISStream (cógela de variable de entorno)
+AISSTREAM_API_KEY = os.getenv("AISSTREAM_API_KEY", "")
+
+# Bounding box de tu área de interés (el mismo que usas para el grafo)
+AIS_LAT_RANGE = (-10.0, 35.0)
+AIS_LON_RANGE = (30.0, 65.0)

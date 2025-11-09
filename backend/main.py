@@ -24,8 +24,12 @@ from backend.data_sources import (
 )
 from backend.graph_builder import load_graph, build_grid_graph, save_graph
 from backend.routing import compute_route
-from backend.config import GRAPH_PICKLE_PATH
+from backend.config import GRAPH_PICKLE_PATH, AIS_LAT_RANGE, AIS_LON_RANGE
 from backend.live_weather import update_graph_weather, build_weather_risk_layer
+from backend.ais_traffic import update_graph_traffic_from_ais, build_traffic_layer_from_graph
+
+
+
 
 
 app = FastAPI(
@@ -59,6 +63,8 @@ PORTS: Dict[str, Port] = {}
 GRAPH = None
 PIRACY_LAYER: Optional[RiskLayer] = None
 WEATHER_LAYER: Optional[RiskLayer] = None
+TRAFFIC_LAYER: Optional[RiskLayer] = None
+
 WEATHER_LIVE_LAYER: Optional[RiskLayer] = None
 
 
@@ -89,15 +95,34 @@ def init_app():
     except Exception as exc:
         print(f"[WARN] Could not update live weather on startup: {exc}")
 
+    
 
 @app.on_event("startup")
 async def startup_event():
+    global TRAFFIC_LAYER
+
+    # 1) Carga síncrona de todo (puertos, grafo, weather estática + live)
     init_app()
 
+    # 2) Actualizar tráfico AIS y construir TRAFFIC_LAYER
+    try:
+        # Esto actualizará G.nodes[node]["traffic_risk"]
+        await update_graph_traffic_from_ais(
+            GRAPH,
+            AIS_LAT_RANGE,
+            AIS_LON_RANGE,
+            duration_sec=60.0,   # ya lo tienes así por defecto, pero así es explícito
+        )
 
-# ───────────────────────────────
-# Endpoints
-# ───────────────────────────────
+        # Ahora construimos la capa agregada en forma de polígonos
+        TRAFFIC_LAYER = build_traffic_layer_from_graph(GRAPH)
+        print(f"[INFO] Traffic layer built. Features: {len(TRAFFIC_LAYER.features)}")
+
+    except Exception as exc:
+        print(f"[WARN] Could not update AIS traffic on startup: {exc}")
+        TRAFFIC_LAYER = None
+
+
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health():
     return HealthResponse(
@@ -230,12 +255,18 @@ async def risk_layers(
     elif WEATHER_LAYER and (type_list is None or "weather" in type_list):
         layers.append(WEATHER_LAYER)
 
+    # ⬇⬇⬇ NUEVO: capa de tráfico
+    if TRAFFIC_LAYER and (type_list is None or "traffic" in type_list):
+        layers.append(TRAFFIC_LAYER)
+
     # TODO: filter by bbox if provided
     return RiskLayersResponse(layers=layers)
+
 
 
 # ───────────────────────────────
 # Run directly
 # ───────────────────────────────
+
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)

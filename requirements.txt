@@ -10,3 +10,5 @@ xarray
 netCDF4
 haversine
 requests
+python-dotenv
+websockets
