@@ -101,8 +101,26 @@ def init_app():
 async def startup_event():
     global TRAFFIC_LAYER
 
-    # Carga síncrona de todo (puertos, grafo, weather estática, etc.)
+    # 1) Carga síncrona de todo (puertos, grafo, weather estática + live)
     init_app()
+
+    # 2) Actualizar tráfico AIS y construir TRAFFIC_LAYER
+    try:
+        # Esto actualizará G.nodes[node]["traffic_risk"]
+        await update_graph_traffic_from_ais(
+            GRAPH,
+            AIS_LAT_RANGE,
+            AIS_LON_RANGE,
+            duration_sec=60.0,   # ya lo tienes así por defecto, pero así es explícito
+        )
+
+        # Ahora construimos la capa agregada en forma de polígonos
+        TRAFFIC_LAYER = build_traffic_layer_from_graph(GRAPH)
+        print(f"[INFO] Traffic layer built. Features: {len(TRAFFIC_LAYER.features)}")
+
+    except Exception as exc:
+        print(f"[WARN] Could not update AIS traffic on startup: {exc}")
+        TRAFFIC_LAYER = None
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
