@@ -1,13 +1,10 @@
-# main.py
 from __future__ import annotations
-from fastapi.middleware.cors import CORSMiddleware
-
 
 from typing import Dict, Optional, List
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware  # ⬅️ NEW
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.models import (
     HealthResponse,
@@ -28,7 +25,7 @@ from backend.data_sources import (
 from backend.graph_builder import load_graph, build_grid_graph, save_graph
 from backend.routing import compute_route
 from backend.config import GRAPH_PICKLE_PATH
-from backend.live_weather import update_graph_weather
+from backend.live_weather import update_graph_weather, build_weather_risk_layer
 
 
 app = FastAPI(
@@ -37,36 +34,44 @@ app = FastAPI(
     description="API for maritime route optimization considering weather, piracy and other risk layers.",
 )
 
+# ───────────────────────────────
+# CORS (allow local frontends)
+# ───────────────────────────────
 origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "http://localhost:3000",   
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,        
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
+# ───────────────────────────────
+# Globals
+# ───────────────────────────────
 PORTS: Dict[str, Port] = {}
 GRAPH = None
 PIRACY_LAYER: Optional[RiskLayer] = None
 WEATHER_LAYER: Optional[RiskLayer] = None
+WEATHER_LIVE_LAYER: Optional[RiskLayer] = None
 
 
+# ───────────────────────────────
+# Init app (load graph, layers, live weather)
+# ───────────────────────────────
 def init_app():
-    global PORTS, GRAPH, PIRACY_LAYER, WEATHER_LAYER
+    global PORTS, GRAPH, PIRACY_LAYER, WEATHER_LAYER, WEATHER_LIVE_LAYER
 
     PORTS = load_ports_from_wpi()
 
     if GRAPH_PICKLE_PATH.exists():
-        from backend.graph_builder import load_graph as _load_graph
-        GRAPH = _load_graph()
+        GRAPH = load_graph()
     else:
         lat_range = (-10.0, 35.0)
         lon_range = (30.0, 65.0)
@@ -79,6 +84,8 @@ def init_app():
 
     try:
         update_graph_weather(GRAPH)
+        WEATHER_LIVE_LAYER = build_weather_risk_layer(GRAPH)
+        print("[INFO] Live weather layer built successfully.")
     except Exception as exc:
         print(f"[WARN] Could not update live weather on startup: {exc}")
 
@@ -88,6 +95,9 @@ async def startup_event():
     init_app()
 
 
+# ───────────────────────────────
+# Endpoints
+# ───────────────────────────────
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health():
     return HealthResponse(
@@ -214,13 +224,18 @@ async def risk_layers(
     if PIRACY_LAYER and (type_list is None or "piracy" in type_list):
         layers.append(PIRACY_LAYER)
 
-    if WEATHER_LAYER and (type_list is None or "weather" in type_list):
+    # Serve the aggregated live weather layer as "weather"
+    if WEATHER_LIVE_LAYER and (type_list is None or "weather" in type_list):
+        layers.append(WEATHER_LIVE_LAYER)
+    elif WEATHER_LAYER and (type_list is None or "weather" in type_list):
         layers.append(WEATHER_LAYER)
 
     # TODO: filter by bbox if provided
-
     return RiskLayersResponse(layers=layers)
 
 
+# ───────────────────────────────
+# Run directly
+# ───────────────────────────────
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
