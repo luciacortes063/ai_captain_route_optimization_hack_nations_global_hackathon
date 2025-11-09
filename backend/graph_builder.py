@@ -1,4 +1,4 @@
-# graph_builder.py
+# backend/graph_builder.py
 from __future__ import annotations
 
 from typing import Dict, Tuple
@@ -20,6 +20,7 @@ from backend.data_sources import (
     is_land,
 )
 from backend.models import RiskLayer
+from backend.geopolitics import load_geopolitics_config
 from haversine import haversine
 
 
@@ -63,7 +64,6 @@ def compute_node_risks(
 
     shallow = is_shallow(bathy_ds, lat, lon)
     depth_penalty = 1.0 if shallow else 0.0
-    
 
     return piracy_risk, weather_risk, depth_penalty
 
@@ -72,10 +72,21 @@ def build_grid_graph(
     lat_range: Tuple[float, float],
     lon_range: Tuple[float, float],
 ) -> Tuple[nx.Graph, RiskLayer, RiskLayer]:
+    """
+    Construye el grafo de celdas marítimas, anotando:
+      - piracy_risk
+      - weather_risk
+      - depth_penalty
+      - geo_base_risk
+      - geo_target_flags (dict ISO3 -> extra risk)
+    """
 
     G = nx.Graph()
     bathy_ds = load_bathymetry()
     piracy_layer, weather_layer, piracy_polygons, weather_polygons = build_risk_polygons()
+
+    # Zonas geopolíticas (polígonos + riesgos)
+    geopolitics_layer, geopolitics_polygons, _aliases = load_geopolitics_config()
 
     lat_min, lat_max = lat_range
     lon_min, lon_max = lon_range
@@ -97,6 +108,23 @@ def build_grid_graph(
                 weather_polygons,
                 bathy_ds,
             )
+
+            point = Point(float(lon), float(lat))
+
+            # --- riesgo geopolítico por nodo ---
+            geo_base_risk = 0.0
+            geo_target_flags: Dict[str, float] = {}
+
+            for poly, base_risk, target_flags, *_ in geopolitics_polygons:
+                if poly.contains(point):
+                    if base_risk > geo_base_risk:
+                        geo_base_risk = base_risk
+                    # agregamos max extra por bandera
+                    for iso3, extra in target_flags.items():
+                        prev = geo_target_flags.get(iso3, 0.0)
+                        if extra > prev:
+                            geo_target_flags[iso3] = float(extra)
+
             node_id = f"{lat:.3f},{lon:.3f}"
             G.add_node(
                 node_id,
@@ -105,6 +133,8 @@ def build_grid_graph(
                 piracy_risk=piracy_risk,
                 weather_risk=weather_risk,
                 depth_penalty=depth_penalty,
+                geo_base_risk=geo_base_risk,
+                geo_target_flags=geo_target_flags,
             )
 
     # Edges are geodesic distances

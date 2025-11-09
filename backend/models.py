@@ -61,9 +61,14 @@ class RouteSummary(BaseModel):
     mode: Literal["safe", "fast", "balanced"]
     totalDistanceNm: float
     estimatedDurationHours: float
+
+    # Riesgos NORMALIZADOS (promedio a lo largo de la ruta)
     totalWeatherRisk: float
     totalPiracyRisk: float
     totalDepthPenalty: float
+    totalTrafficRisk: float
+    totalGeopoliticalRisk: float
+
 
 
 class RouteSegment(BaseModel):

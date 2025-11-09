@@ -61,3 +61,10 @@ AISSTREAM_API_KEY = os.getenv("AISSTREAM_API_KEY", "")
 # Bounding box de tu área de interés (el mismo que usas para el grafo)
 AIS_LAT_RANGE = (-10.0, 35.0)
 AIS_LON_RANGE = (30.0, 65.0)
+
+
+# Geopolitics config
+GEOPOLITICS_GEOJSON_PATH = DATA_DIR / "geopolitics_config.geojson"
+
+# Peso del riesgo geopolítico en la función de coste (se ajusta por modo en routing)
+LAMBDA_GEO = 5.0

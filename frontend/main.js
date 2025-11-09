@@ -12,7 +12,15 @@ const etaEl       = document.getElementById("eta");
 const piracyEl    = document.getElementById("piracy");
 const weatherEl   = document.getElementById("weather");
 const explEl      = document.getElementById("explanations");
-const toggleRisk  = document.getElementById("toggleRisk");
+const trafficEl   = document.getElementById("traffic");
+const geoEl       = document.getElementById("geopolitics");
+const alertsEl    = document.getElementById("routeAlerts");
+
+
+// Overlays
+const overlayModeRadios = document.querySelectorAll('input[name="overlayMode"]');
+const riskLegend  = document.getElementById("riskLegend");
+const safetyLegend = document.getElementById("safetyLegend");
 
 // Helpers
 function setControlsEnabled(enabled) {
@@ -20,8 +28,28 @@ function setControlsEnabled(enabled) {
   destSel.disabled   = !enabled;
   btn.disabled       = !enabled;
 }
-function setRiskToggleEnabled(enabled) {
-  toggleRisk.disabled = !enabled;
+
+function setOverlayControlsEnabled(enabled) {
+  overlayModeRadios.forEach(r => r.disabled = !enabled);
+}
+
+function getOverlayMode() {
+  const r = document.querySelector('input[name="overlayMode"]:checked');
+  return r ? r.value : "none";
+}
+
+function updateLegends() {
+  const mode = getOverlayMode();
+  if (mode === "risk") {
+    if (riskLegend) riskLegend.classList.remove("hidden");
+    if (safetyLegend) safetyLegend.classList.add("hidden");
+  } else if (mode === "safety") {
+    if (riskLegend) riskLegend.classList.add("hidden");
+    if (safetyLegend) safetyLegend.classList.remove("hidden");
+  } else {
+    if (riskLegend) riskLegend.classList.add("hidden");
+    if (safetyLegend) safetyLegend.classList.add("hidden");
+  }
 }
 
 // =================== MAP ===================
@@ -111,10 +139,9 @@ function clearRoute() {
 function clearHazards() {
   for (const l of hazardLayers) map.removeLayer(l);
   hazardLayers = [];
+  hazardLayers = [];
 }
 
-
-// ---- hardened route draw + safe fit
 // --- Simple route smoothing with Chaikin's corner cutting ---
 function smoothRoute(coords, iterations = 2) {
   if (!Array.isArray(coords) || coords.length < 3) return coords;
@@ -129,7 +156,6 @@ function smoothRoute(coords, iterations = 2) {
       const [lat1, lon1] = current[i];
       const [lat2, lon2] = current[i + 1];
 
-      // Chaikin: Q = 0.75P + 0.25Q, R = 0.25P + 0.75Q
       const qLat = 0.75 * lat1 + 0.25 * lat2;
       const qLon = 0.75 * lon1 + 0.25 * lon2;
       const rLat = 0.25 * lat1 + 0.75 * lat2;
@@ -170,10 +196,11 @@ function drawRouteFromCoordinates(rawCoords) {
   if (coords.length < 2) return;
 
   // smooth route
-  const smoothCoords = smoothRoute(coords, 2); // prueba 1 o 2 iteraciones
+  const smoothCoords = smoothRoute(coords, 2);
 
   if (routeLayer) map.removeLayer(routeLayer);
-  routeLayer = L.polyline(smoothCoords, { weight: 4, color: "#d00" }).addTo(map);
+  routeLayer = L.polyline(smoothCoords, { weight: 4, color: "#000000" }).addTo(map);
+  routeLayer.bringToFront();   // 👈 ruta siempre encima
 
   let b = L.latLngBounds(smoothCoords);
   if (b.getNorth() === b.getSouth() || b.getEast() === b.getWest()) {
@@ -196,24 +223,58 @@ function drawRouteFromCoordinates(rawCoords) {
   setTimeout(() => clampHorizontalAtMinZoom(), 0);
 }
 
+// =================== RISK LAYERS / SAFETY MAP ===================
+
+function colorForSafety(sev) {
+  // sev 1..5 -> verde → rojo
+  switch (sev) {
+    case 1: return "#00b050"; // very low
+    case 2: return "#92d050"; // low
+    case 3: return "#ffff00"; // medium
+    case 4: return "#ff4d00ff"; // high
+    case 5: return "#ff0000"; // very high
+    default: return "#cccccc";
+  }
+}
 
 function drawRiskLayers(layers) {
   clearHazards();
+
+  const mode = getOverlayMode();
+  if (mode === "none") {
+    // no pintamos nada
+    return;
+  }
+
   for (const layer of layers || []) {
-    let color;
-    if (layer.type === "piracy") color = "orange";
-    else if (layer.type === "weather") color = "deepskyblue";
-    else if (layer.type === "traffic") color = "gray";  // morado tráfico
-    else color = "pink";
+    // filtramos según modo
+    if (mode === "risk" && layer.type === "safety") continue;
+    if (mode === "safety" && layer.type !== "safety") continue;
 
     for (const f of layer.features || []) {
       const risk = f.riskLevel ?? f.severity ?? 0;
 
-      // Un poco más opaco si es riesgo alto
+      let color;
       let fillOpacity = 0.25;
-      if (layer.type === "traffic") {
+
+      if (layer.type === "piracy") {
+        color = "orange";
+      } else if (layer.type === "weather") {
+        color = "deepskyblue";
+      } else if (layer.type === "traffic") {
+        color = "gray";
         if (risk >= 2) fillOpacity = 0.45;
         else if (risk === 1) fillOpacity = 0.3;
+      } else if (layer.type === "geopolitics") {
+        color = "red";
+        if (risk >= 3) fillOpacity = 0.5;
+        else if (risk >= 2) fillOpacity = 0.4;
+        else fillOpacity = 0.3;
+      } else if (layer.type === "safety") {
+        color = colorForSafety(risk);
+        fillOpacity = 0.35;
+      } else {
+        color = "pink";
       }
 
       const poly = L.polygon(f.polygon, { color, weight: 1, fillOpacity });
@@ -221,8 +282,10 @@ function drawRiskLayers(layers) {
       hazardLayers.push(poly);
     }
   }
-}
 
+  // Ruta siempre por encima de las capas
+  if (routeLayer) routeLayer.bringToFront();
+}
 
 // =================== API HELPERS ===================
 async function apiGet(path, params = {}) {
@@ -237,7 +300,7 @@ async function apiGet(path, params = {}) {
     throw new Error(`Network error calling ${url}`);
   }
 
-  const text = await res.text();   // read raw text first
+  const text = await res.text();
   if (!res.ok) {
     console.error(`[GET ${url}] HTTP ${res.status}:`, text);
     throw new Error(text || `GET ${url} failed with ${res.status}`);
@@ -298,13 +361,14 @@ async function loadPorts() {
   setControlsEnabled(true);
 }
 
-// =================== RISK LAYERS (optional) ===================
+// =================== RISK LAYERS ===================
 async function loadRiskLayers() {
   try {
     const data = await apiGet("/risk-layers");
     console.log("risk layers from API:", data); 
     drawRiskLayers(data?.layers ?? []);
-  } catch {
+  } catch (e) {
+    console.error("Error loading risk layers:", e);
     clearHazards();
   }
 }
@@ -318,22 +382,85 @@ function getMode() {
 function setResults(route) {
   const s = route?.summary || {};
   resultsEl.classList.remove("hidden");
-  distanceEl.textContent = s.totalDistanceNm != null ? `${s.totalDistanceNm.toFixed?.(1)} nm` : "–";
-  etaEl.textContent      = s.estimatedDurationHours != null ? `${s.estimatedDurationHours.toFixed?.(1)} h` : "–";
-  piracyEl.textContent   = s.totalPiracyRisk != null ? s.totalPiracyRisk.toFixed?.(2) : "–";
-  weatherEl.textContent  = s.totalWeatherRisk != null ? s.totalWeatherRisk.toFixed?.(2) : "–";
 
+  // Distancia y ETA
+  distanceEl.textContent = s.totalDistanceNm != null
+    ? `${s.totalDistanceNm.toFixed?.(1)} nm`
+    : "–";
+
+  etaEl.textContent = s.estimatedDurationHours != null
+    ? `${s.estimatedDurationHours.toFixed?.(1)} h`
+    : "–";
+
+  // Riesgos normalizados
+  piracyEl.textContent = s.totalPiracyRisk != null
+    ? `${s.totalPiracyRisk.toFixed?.(2)} / 3`
+    : "–";
+
+  weatherEl.textContent = s.totalWeatherRisk != null
+    ? `${s.totalWeatherRisk.toFixed?.(2)} / 3`  // índice continuo, sin denominador
+    : "–";
+
+  if (trafficEl) {
+    trafficEl.textContent = s.totalTrafficRisk != null
+      ? `${s.totalTrafficRisk.toFixed?.(2)} / 3`
+      : "–";
+  }
+
+  if (geoEl) {
+    geoEl.textContent = s.totalGeopoliticalRisk != null
+      ? `${s.totalGeopoliticalRisk.toFixed?.(2)} / 3`
+      : "–";
+  }
+
+  // Separar explicaciones normales y alerts
   const exp = route?.explanation || {};
-  const lines = []
+  const rawLines = []
     .concat(exp.highLevel || [])
     .concat(exp.tradeoffs || []);
+
+  const normalLines = [];
+  const alertLines  = [];
+
+  rawLines.forEach(t => {
+    if (!t) return;
+    if (t.startsWith("Route Alert:")) {
+      alertLines.push(t);
+    } else {
+      normalLines.push(t);
+    }
+  });
+
+  // Lista normal de explicaciones
   explEl.innerHTML = "";
-  lines.forEach(t => {
+  normalLines.forEach(t => {
     const li = document.createElement("li");
     li.textContent = t;
     explEl.appendChild(li);
   });
+
+  // Pills de alerta (una por nota/zona)
+  if (alertsEl) {
+    alertsEl.innerHTML = "";
+    alertLines.forEach(t => {
+      const pill = document.createElement("div");
+      pill.className = "route-alert-pill";
+
+      const label = document.createElement("span");
+      label.className = "route-alert-label";
+      label.textContent = "Route alert";
+
+      const text = document.createElement("span");
+      // quitamos el prefijo "Route Alert:"
+      text.textContent = t.replace(/^Route Alert:\s*/i, "");
+
+      pill.appendChild(label);
+      pill.appendChild(text);
+      alertsEl.appendChild(pill);
+    });
+  }
 }
+
 
 async function calculateRoute() {
   msg.textContent = "";
@@ -370,7 +497,8 @@ async function calculateRoute() {
 
     setResults(route);
 
-    if (toggleRisk.checked) {
+    const modeOverlay = getOverlayMode();
+    if (modeOverlay !== "none") {
       await loadRiskLayers();
     } else {
       clearHazards();
@@ -385,15 +513,24 @@ async function calculateRoute() {
 
 // =================== WIRE UP ===================
 btn.addEventListener("click", calculateRoute);
-toggleRisk.addEventListener("change", async () => {
-  if (toggleRisk.checked) await loadRiskLayers();
-  else clearHazards();
+
+overlayModeRadios.forEach(r => {
+  r.addEventListener("change", async () => {
+    updateLegends();
+    const mode = getOverlayMode();
+    if (mode === "none") {
+      clearHazards();
+    } else {
+      await loadRiskLayers().catch(() => {});
+    }
+  });
 });
 
 // =================== INIT ===================
 (async function init() {
   setControlsEnabled(false);
-  setRiskToggleEnabled(true);
+  setOverlayControlsEnabled(true);
+  updateLegends();
 
   try { await apiGet("/health"); } catch {}
 
@@ -406,7 +543,8 @@ toggleRisk.addEventListener("change", async () => {
     setControlsEnabled(false);
   }
 
-  if (toggleRisk.checked) {
+  const modeOverlay = getOverlayMode();
+  if (modeOverlay !== "none") {
     await loadRiskLayers().catch(() => {});
   }
 })();
