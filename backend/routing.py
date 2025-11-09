@@ -72,13 +72,13 @@ def build_weight_function(mode: str, G: nx.Graph, vessel_iso3: str | None):
         lambda_w = 0.0
         lambda_d = 1.0
         lambda_t = 0.5
-        lambda_geo = 1.0
+        lambda_geo = 0.0
     elif mode == "safe":
         lambda_p = 50.0
         lambda_w = 6.0
         lambda_d = 30.0
         lambda_t = 10.0
-        lambda_geo = 8.0
+        lambda_geo = 50.0
     else:  # balanced
         lambda_p = 10.0
         lambda_w = 3.0
@@ -323,34 +323,26 @@ def compute_route(
         totalGeopoliticalRisk=avg_geo,
     )
 
-    # Construir alertas de ruta en función de las zonas geopolíticas visitadas
+        # Construir alertas de ruta en función de las zonas geopolíticas visitadas
     route_alerts: List[str] = []
     if visited_geo_zones:
         meta = get_zone_metadata()
-        zone_names = []
-        notes_list = []
+
         for zid in sorted(visited_geo_zones):
             m = meta.get(zid)
             if not m:
                 continue
             name = m.get("name") or zid
-            if name not in zone_names:
-                zone_names.append(name)
-            notes = m.get("notes")
-            if notes:
-                notes_list.append(notes)
+            notes = m.get("notes", "").strip()
 
-        if zone_names:
-            names_str = ", ".join(zone_names)
-            alert_text = f"Route Alert: This route passes through the following geopolitical tension zones: {names_str}."
-            if notes_list:
-                uniq_notes: List[str] = []
-                for n in notes_list:
-                    if n not in uniq_notes:
-                        uniq_notes.append(n)
-                notes_str = " ".join(uniq_notes)
-                alert_text += f" Notes: {notes_str}"
+            if notes:
+                # Una alerta por zona con notas
+                alert_text = f"Route Alert: {name} –> {notes}"
+            else:
+                alert_text = f"Route Alert: {name}"
+
             route_alerts.append(alert_text)
+
 
     explanation = build_explanation(summary, route_request.mode, route_alerts)
 

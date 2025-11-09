@@ -383,6 +383,7 @@ function setResults(route) {
   const s = route?.summary || {};
   resultsEl.classList.remove("hidden");
 
+  // Distancia y ETA
   distanceEl.textContent = s.totalDistanceNm != null
     ? `${s.totalDistanceNm.toFixed?.(1)} nm`
     : "–";
@@ -391,26 +392,28 @@ function setResults(route) {
     ? `${s.estimatedDurationHours.toFixed?.(1)} h`
     : "–";
 
+  // Riesgos normalizados
   piracyEl.textContent = s.totalPiracyRisk != null
-    ? s.totalPiracyRisk.toFixed?.(2)
+    ? `${s.totalPiracyRisk.toFixed?.(2)} / 3`
     : "–";
 
   weatherEl.textContent = s.totalWeatherRisk != null
-    ? s.totalWeatherRisk.toFixed?.(2)
+    ? `${s.totalWeatherRisk.toFixed?.(2)} / 3`  // índice continuo, sin denominador
     : "–";
 
   if (trafficEl) {
     trafficEl.textContent = s.totalTrafficRisk != null
-      ? s.totalTrafficRisk.toFixed?.(2)
+      ? `${s.totalTrafficRisk.toFixed?.(2)} / 3`
       : "–";
   }
 
   if (geoEl) {
     geoEl.textContent = s.totalGeopoliticalRisk != null
-      ? s.totalGeopoliticalRisk.toFixed?.(2)
+      ? `${s.totalGeopoliticalRisk.toFixed?.(2)} / 3`
       : "–";
   }
 
+  // Separar explicaciones normales y alerts
   const exp = route?.explanation || {};
   const rawLines = []
     .concat(exp.highLevel || [])
@@ -436,7 +439,7 @@ function setResults(route) {
     explEl.appendChild(li);
   });
 
-  // Pills de alerta
+  // Pills de alerta (una por nota/zona)
   if (alertsEl) {
     alertsEl.innerHTML = "";
     alertLines.forEach(t => {
@@ -448,6 +451,7 @@ function setResults(route) {
       label.textContent = "Route alert";
 
       const text = document.createElement("span");
+      // quitamos el prefijo "Route Alert:"
       text.textContent = t.replace(/^Route Alert:\s*/i, "");
 
       pill.appendChild(label);

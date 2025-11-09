@@ -114,20 +114,22 @@ button#btn{
 }
 
 .route-alert-pill{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:6px 10px;
-  border-radius:999px;
+  display:block;
+  padding:8px 10px;
+  border-radius:6px;              /* menos redondeado → más rectangular */
   font-size:12px;
-  background:#fef3c7;        /* amarillo suave */
-  border:1px solid #f59e0b;  /* naranja */
+  background:#fef3c7;             /* amarillo suave */
+  border:1px solid #f59e0b;       /* naranja */
   color:#92400e;
+  margin-top:4px;
 }
 
 .route-alert-label{
+  display:inline-block;
+  margin-right:6px;
   font-weight:600;
   text-transform:uppercase;
   font-size:11px;
 }
+
 
