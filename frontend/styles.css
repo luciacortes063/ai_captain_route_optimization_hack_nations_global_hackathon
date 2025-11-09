@@ -28,6 +28,22 @@ select{
 
 .modes{ margin:12px 0; display:flex; gap:16px; }
 
+/* Overlays (radio buttons) */
+.overlay-modes{
+  margin-top:12px;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.overlay-title{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+
 button#btn{
   width:100%; padding:10px 14px; border:0; border-radius:10px; cursor:pointer;
   background:#111827; color:white; font-weight:600;
@@ -41,14 +57,77 @@ button#btn{
 .kv{ display:flex; justify-content:space-between; margin:6px 0; }
 .kv span{ color:var(--muted); }
 
-.legend{ margin-top:12px; }
-.chip{ display:inline-block; width:14px; height:8px; border-radius:999px; margin-right:6px; vertical-align:middle; }
-.chip-route{ background:#d00; }
+/* Leyendas (no colapsables) */
+.legend{
+  margin-top:16px;
+  font-size:13px;
+}
+.legend h4{
+  margin:0 0 8px;
+  font-size:13px;
+  font-weight:600;
+}
+.chip{
+  display:inline-block;
+  width:14px;
+  height:8px;
+  border-radius:999px;
+  margin-right:6px;
+  vertical-align:middle;
+}
+
+/* Colores de la leyenda de risk */
+.chip-route{ background:#000; }
 .chip-piracy{ background:orange; opacity:.6; }
 .chip-storm{ background:deepskyblue; opacity:.5; }
 .chip-traffic{ background:gray; opacity:.6; }
+.chip-geopolitics{ background:red; opacity:.6; }
 
+/* Safety: la escala real se dibuja en safetyLegend, esto es solo estilo base */
+.chip-safety{ background:#888; opacity:.6; }
+
+/* Filas de escala para safetyLegend */
+.scale-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:4px 0;
+}
+.scale-chip{
+  display:inline-block;
+  width:18px;
+  height:10px;
+  border-radius:4px;
+}
+
+/* Mapa */
 #map{ height:100%; width:100%; }
 
 /* Leaflet tweaks */
 .leaflet-container{ font-family:inherit; }
+
+.route-alerts{
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.route-alert-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  background:#fef3c7;        /* amarillo suave */
+  border:1px solid #f59e0b;  /* naranja */
+  color:#92400e;
+}
+
+.route-alert-label{
+  font-weight:600;
+  text-transform:uppercase;
+  font-size:11px;
+}
+

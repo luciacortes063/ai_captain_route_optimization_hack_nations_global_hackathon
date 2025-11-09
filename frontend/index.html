@@ -11,45 +11,85 @@
 <body>
   <div id="app">
     <aside class="sidebar">
-      <h2>Cargo Route Planner</h2>
+        <h2>Cargo Route Planner</h2>
 
-      <label>Origin port</label>
-      <select id="origin"></select>
+        <label>Origin port</label>
+        <select id="origin"></select>
 
-      <label>Destination port</label>
-      <select id="dest"></select>
+        <label>Destination port</label>
+        <select id="dest"></select>
 
-      <div class="modes">
-        <label><input type="radio" name="mode" value="fast"> Fastest</label>
-        <label><input type="radio" name="mode" value="safe" checked> Safest</label>
-        <label><input type="radio" name="mode" value="balanced"> Balanced</label>
-      </div>
+        <div class="modes">
+            <label><input type="radio" name="mode" value="fast"> Fastest</label>
+            <label><input type="radio" name="mode" value="safe" checked> Safest</label>
+            <label><input type="radio" name="mode" value="balanced"> Balanced</label>
+        </div>
 
-      <button id="btn">Calculate route</button>
+        <button id="btn">Calculate route</button>
 
-      <div class="modes" style="margin-top:10px">
-        <label><input type="checkbox" id="toggleRisk" checked> Show risk layers</label>
-      </div>
+        <!-- Overlays (mutuamente excluyentes) -->
+        <div class="overlay-modes">
+            <span class="overlay-title">Overlays</span>
+            <label><input type="radio" name="overlayMode" value="none" checked> None</label>
+            <label><input type="radio" name="overlayMode" value="risk"> Show risk layers</label>
+            <label><input type="radio" name="overlayMode" value="safety"> Show safety map</label>
+        </div>
 
-      <div id="msg" class="msg"></div>
+        <!-- Leyenda de risk -->
+        <div class="legend" id="riskLegend">
+            <h4>Legend</h4>
+            <div><span class="chip chip-route"></span> Route</div>
+            <div><span class="chip chip-piracy"></span> Piracy zone</div>
+            <div><span class="chip chip-storm"></span> Weather/Storm</div>
+            <div><span class="chip chip-traffic"></span> High traffic</div>
+            <div><span class="chip chip-geopolitics"></span> Geopolitical tension zone</div>
+        </div>
 
-      <div id="results" class="results hidden">
-        <h3>Results</h3>
-        <div class="kv"><span>Total distance</span><strong id="distance">–</strong></div>
-        <div class="kv"><span>Estimated time</span><strong id="eta">–</strong></div>
-        <div class="kv"><span>Total piracy risk</span><strong id="piracy">–</strong></div>
-        <div class="kv"><span>Total weather risk</span><strong id="weather">–</strong></div>
-        <ul id="explanations"></ul>
+        <!-- Leyenda de safety -->
+        <div class="legend hidden" id="safetyLegend">
+            <h4>Safety map scale</h4>
+            <div class="scale-row">
+            <span class="scale-chip" style="background:#00b050;"></span>
+            <span>Very low risk</span>
+            </div>
+            <div class="scale-row">
+            <span class="scale-chip" style="background:#92d050;"></span>
+            <span>Low risk</span>
+            </div>
+            <div class="scale-row">
+            <span class="scale-chip" style="background:#ffff00;"></span>
+            <span>Medium risk</span>
+            </div>
+            <div class="scale-row">
+            <span class="scale-chip" style="background:#ffc000;"></span>
+            <span>High risk</span>
+            </div>
+            <div class="scale-row">
+            <span class="scale-chip" style="background:#ff0000;"></span>
+            <span>Very high risk</span>
+            </div>
+        </div>
 
-        <details class="legend">
-          <summary>Legend</summary>
-          <div><span class="chip chip-route"></span> Route</div>
-          <div><span class="chip chip-piracy"></span> Piracy zone</div>
-          <div><span class="chip chip-storm"></span> Weather/Storm</div>
-          <div><span class="chip chip-traffic"></span> High traffic</div>
-        </details>
-      </div>
-    </aside>
+        <div id="msg" class="msg"></div>
+
+        <div id="results" class="results hidden">
+            <h3>Results</h3>
+            <div class="kv"><span>Total distance</span><strong id="distance">–</strong></div>
+            <div class="kv"><span>Estimated time</span><strong id="eta">–</strong></div>
+
+            <div class="kv"><span>Avg piracy risk</span><strong id="piracy">–</strong></div>
+            <div class="kv"><span>Avg weather risk</span><strong id="weather">–</strong></div>
+            <div class="kv"><span>Avg traffic risk</span><strong id="traffic">–</strong></div>
+            <div class="kv"><span>Avg geopolitical risk</span><strong id="geopolitics">–</strong></div>
+
+            <ul id="explanations"></ul>
+
+            <!-- Route alerts en forma de pills -->
+            <div id="routeAlerts" class="route-alerts"></div>
+        </div>
+
+        </aside>
+
 
     <main id="map"></main>
   </div>

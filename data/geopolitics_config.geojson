@@ -1,0 +1,299 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "description": "Geopolitical tension zones for AI Captain prototype. Coordinates are approximate and simplified for hackathon use.",
+    "version": "0.1",
+    "country_aliases": {
+      "Tanzania": "TZA",
+      "United Republic of Tanzania": "TZA",
+      "Qatar": "QAT",
+      "State of Qatar": "QAT",
+      "Saudi Arabia": "SAU",
+      "Kingdom of Saudi Arabia": "SAU",
+      "United Arab Emirates": "ARE",
+      "UAE": "ARE",
+      "Oman": "OMN",
+      "Sultanate of Oman": "OMN",
+      "Iran": "IRN",
+      "Islamic Republic of Iran": "IRN",
+      "Yemen": "YEM",
+      "Somalia": "SOM",
+      "Egypt": "EGY",
+      "Arab Republic of Egypt": "EGY",
+      "Israel": "ISR",
+      "United States": "USA",
+      "United States of America": "USA",
+      "United Kingdom": "GBR",
+      "UK": "GBR",
+      "Russia": "RUS",
+      "Russian Federation": "RUS",
+      "India": "IND",
+      "China": "CHN",
+      "People's Republic of China": "CHN"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "red_sea_north",
+        "name": "Northern Red Sea – High tension corridor",
+        "base_risk": 2,
+        "target_flags": {
+          "USA": 3,
+          "GBR": 3,
+          "ISR": 3,
+          "SAU": 2,
+          "ARE": 2
+        },
+        "notes": "Approximate corridor in the northern Red Sea where commercial vessels have faced missile/drone threats and heightened military presence."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [32.0, 28.0],
+            [32.0, 20.0],
+            [40.0, 20.0],
+            [40.0, 28.0],
+            [32.0, 28.0]
+          ]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "bab_el_mandeb",
+        "name": "Bab-el-Mandeb strait – Conflict hotspot",
+        "base_risk": 3,
+        "target_flags": {
+          "USA": 3,
+          "GBR": 3,
+          "ISR": 3,
+          "SAU": 2,
+          "ARE": 2
+        },
+        "notes": "Narrow chokepoint between Yemen and the Horn of Africa, area of attacks and military operations. Strongly discouraged for high-value or targeted flags."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [42.0, 14.5],
+            [42.0, 11.0],
+            [46.0, 11.0],
+            [46.0, 14.5],
+            [42.0, 14.5]
+          ]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "red_sea_central",
+        "name": "Central Red Sea – Threatened shipping lanes",
+        "base_risk": 2,
+        "target_flags": {
+          "USA": 3,
+          "GBR": 3,
+          "ISR": 3,
+          "SAU": 2,
+          "ARE": 2
+        },
+        "notes": "Central Red Sea south of Saudi Arabia and west of Yemen, where several long-range attacks on merchant vessels have occurred."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [38.0, 20.0],
+            [38.0, 14.5],
+            [44.0, 14.5],
+            [44.0, 20.0],
+            [38.0, 20.0]
+          ]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "gulf_of_aden",
+        "name": "Gulf of Aden – Combined piracy and conflict risk",
+        "base_risk": 2,
+        "target_flags": {
+          "USA": 2,
+          "GBR": 2,
+          "ISR": 2,
+          "SAU": 2,
+          "ARE": 2,
+          "IND": 1,
+          "CHN": 1
+        },
+        "notes": "Main east–west corridor between Red Sea and Arabian Sea, with residual piracy risk and current conflict-related naval operations."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [44.0, 15.0],
+            [44.0, 10.0],
+            [55.0, 10.0],
+            [55.0, 15.0],
+            [44.0, 15.0]
+          ]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "somali_basin",
+        "name": "Offshore Somalia – Legacy piracy & security risk",
+        "base_risk": 1,
+        "target_flags": {
+          "USA": 1,
+          "GBR": 1,
+          "ISR": 1,
+          "SAU": 1,
+          "ARE": 1,
+          "IND": 1,
+          "CHN": 1
+        },
+        "notes": "Open waters east of Somalia and north of the equator where long-range piracy attacks historically occurred; risk remains non-zero."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [48.0, 10.0],
+            [48.0, 0.0],
+            [60.0, 0.0],
+            [60.0, 10.0],
+            [48.0, 10.0]
+          ]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "strait_of_hormuz",
+        "name": "Strait of Hormuz – High geopolitical tension",
+        "base_risk": 2,
+        "target_flags": {
+          "USA": 3,
+          "GBR": 3,
+          "ISR": 3,
+          "SAU": 2,
+          "ARE": 2,
+          "QAT": 1
+        },
+        "notes": "Narrow passage between Iran and Oman/Emirates with repeated incidents of vessel detentions, military stand-offs and sanctions-related tensions."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [55.0, 27.5],
+            [55.0, 24.5],
+            [60.0, 24.5],
+            [60.0, 27.5],
+            [55.0, 27.5]
+          ]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "eastern_gulf_persian",
+        "name": "Eastern Persian Gulf – Proximity to Iranian waters",
+        "base_risk": 1,
+        "target_flags": {
+          "USA": 2,
+          "GBR": 2,
+          "ISR": 2,
+          "SAU": 1,
+          "ARE": 1,
+          "QAT": 1
+        },
+        "notes": "Eastern side of the Persian Gulf along Iranian coast, where tensions and risk of targeted enforcement against certain flags are higher."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [50.0, 30.0],
+            [50.0, 24.0],
+            [55.0, 24.0],
+            [55.0, 30.0],
+            [50.0, 30.0]
+          ]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "yemeni_coast",
+        "name": "Yemeni coastal waters – Conflict-affected",
+        "base_risk": 2,
+        "target_flags": {
+          "USA": 2,
+          "GBR": 2,
+          "ISR": 2,
+          "SAU": 2,
+          "ARE": 2
+        },
+        "notes": "Coastal strip off Yemen in the Red Sea and Gulf of Aden, affected by ongoing conflict and irregular armed activity."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [42.0, 18.0],
+            [42.0, 12.0],
+            [48.0, 12.0],
+            [48.0, 18.0],
+            [42.0, 18.0]
+          ]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "suez_approaches",
+        "name": "Approaches to Suez Canal – Heightened control",
+        "base_risk": 1,
+        "target_flags": {
+          "RUS": 2
+        },
+        "notes": "Northern approaches to the Suez Canal, with strict controls and potential restrictions for some sanctioned flags."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [31.0, 32.8],
+            [31.0, 30.0],
+            [34.0, 30.0],
+            [34.0, 32.8],
+            [31.0, 32.8]
+          ]
+        ]
+      }
+    }
+  ]
+}

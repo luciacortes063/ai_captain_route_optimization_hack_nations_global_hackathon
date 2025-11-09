@@ -27,6 +27,9 @@ from backend.routing import compute_route
 from backend.config import GRAPH_PICKLE_PATH, AIS_LAT_RANGE, AIS_LON_RANGE
 from backend.live_weather import update_graph_weather, build_weather_risk_layer
 from backend.ais_traffic import update_graph_traffic_from_ais, build_traffic_layer_from_graph
+from backend.geopolitics import load_geopolitics_config, apply_geopolitics_to_graph
+from backend.safety_layer import build_safety_layer_from_graph
+
 
 
 
@@ -64,15 +67,17 @@ GRAPH = None
 PIRACY_LAYER: Optional[RiskLayer] = None
 WEATHER_LAYER: Optional[RiskLayer] = None
 TRAFFIC_LAYER: Optional[RiskLayer] = None
-
 WEATHER_LIVE_LAYER: Optional[RiskLayer] = None
+GEOPOL_LAYER: Optional[RiskLayer] = None
+SAFETY_LAYER: Optional[RiskLayer] = None
+
 
 
 # ───────────────────────────────
 # Init app (load graph, layers, live weather)
 # ───────────────────────────────
 def init_app():
-    global PORTS, GRAPH, PIRACY_LAYER, WEATHER_LAYER, WEATHER_LIVE_LAYER
+    global PORTS, GRAPH, PIRACY_LAYER, WEATHER_LAYER, WEATHER_LIVE_LAYER, GEOPOL_LAYER, SAFETY_LAYER
 
     PORTS = load_ports_from_wpi()
 
@@ -88,6 +93,16 @@ def init_app():
         PIRACY_LAYER = load_piracy_zones()
         WEATHER_LAYER = load_weather_zones()
 
+    # Geopolitics: capa + aplicar al grafo
+    try:
+        geop_layer, _, _ = load_geopolitics_config()
+        GEOPOL_LAYER = geop_layer
+        apply_geopolitics_to_graph(GRAPH)
+        print("[INFO] Geopolitics layer loaded and applied to graph.")
+    except Exception as exc:
+        print(f"[WARN] Could not load/apply geopolitics config: {exc}")
+        GEOPOL_LAYER = None
+
     try:
         update_graph_weather(GRAPH)
         WEATHER_LIVE_LAYER = build_weather_risk_layer(GRAPH)
@@ -95,11 +110,12 @@ def init_app():
     except Exception as exc:
         print(f"[WARN] Could not update live weather on startup: {exc}")
 
+
     
 
 @app.on_event("startup")
 async def startup_event():
-    global TRAFFIC_LAYER
+    global TRAFFIC_LAYER, SAFETY_LAYER
 
     # 1) Carga síncrona de todo (puertos, grafo, weather estática + live)
     init_app()
@@ -121,6 +137,13 @@ async def startup_event():
     except Exception as exc:
         print(f"[WARN] Could not update AIS traffic on startup: {exc}")
         TRAFFIC_LAYER = None
+
+    try:
+        SAFETY_LAYER = build_safety_layer_from_graph(GRAPH)
+        print(f"[INFO] Safety layer built. Features: {len(SAFETY_LAYER.features)}")
+    except Exception as exc:
+        print(f"[WARN] Could not build safety layer: {exc}")
+        SAFETY_LAYER = None
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
@@ -258,6 +281,12 @@ async def risk_layers(
     # ⬇⬇⬇ NUEVO: capa de tráfico
     if TRAFFIC_LAYER and (type_list is None or "traffic" in type_list):
         layers.append(TRAFFIC_LAYER)
+
+    if GEOPOL_LAYER and (type_list is None or "geopolitics" in type_list):
+        layers.append(GEOPOL_LAYER)
+
+    if SAFETY_LAYER and (type_list is None or "safety" in type_list):
+        layers.append(SAFETY_LAYER)
 
     # TODO: filter by bbox if provided
     return RiskLayersResponse(layers=layers)
