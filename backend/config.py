@@ -34,6 +34,12 @@ LAMBDA_DEPTH = 10.0
 
 MIN_DEPTH_METERS = 50
 
+# Continuous weather penalty
+WAVE_HEIGHT_THRESHOLDS_M = (1.0, 2.5)    # start penalizing above 1.0 m
+WIND_SPEED_THRESHOLD_MS  = 8.0           # start above ~15.5 kn
+WEATHER_WAVE_WEIGHT      = 6.0
+WEATHER_WIND_WEIGHT      = 3.0
+
 # Live weather
 WEATHER_API_BASE_URL = "https://marine-api.open-meteo.com/v1/marine"
 WEATHER_CELL_SIZE_DEG = 2.0
