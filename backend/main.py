@@ -30,20 +30,13 @@ from backend.ais_traffic import update_graph_traffic_from_ais, build_traffic_lay
 from backend.geopolitics import load_geopolitics_config, apply_geopolitics_to_graph
 from backend.safety_layer import build_safety_layer_from_graph
 
-
-
-
-
-
 app = FastAPI(
     title="AI Captain Route Optimization API",
     version="0.1.0",
     description="API for maritime route optimization considering weather, piracy and other risk layers.",
 )
 
-# ───────────────────────────────
-# CORS (allow local frontends)
-# ───────────────────────────────
+# ── CORS (allow local dev frontends)
 origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
@@ -59,9 +52,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ───────────────────────────────
-# Globals
-# ───────────────────────────────
+# ── Globals (hot-reloaded by uvicorn in dev)
 PORTS: Dict[str, Port] = {}
 GRAPH = None
 PIRACY_LAYER: Optional[RiskLayer] = None
@@ -72,10 +63,7 @@ GEOPOL_LAYER: Optional[RiskLayer] = None
 SAFETY_LAYER: Optional[RiskLayer] = None
 
 
-
-# ───────────────────────────────
-# Init app (load graph, layers, live weather)
-# ───────────────────────────────
+# ── Init app (graph + static layers + live weather)
 def init_app():
     global PORTS, GRAPH, PIRACY_LAYER, WEATHER_LAYER, WEATHER_LIVE_LAYER, GEOPOL_LAYER, SAFETY_LAYER
 
@@ -84,6 +72,7 @@ def init_app():
     if GRAPH_PICKLE_PATH.exists():
         GRAPH = load_graph()
     else:
+        # Fallback build region if no cached graph exists
         lat_range = (-10.0, 35.0)
         lon_range = (30.0, 65.0)
         GRAPH, PIRACY_LAYER, WEATHER_LAYER = build_grid_graph(lat_range, lon_range)
@@ -93,7 +82,7 @@ def init_app():
         PIRACY_LAYER = load_piracy_zones()
         WEATHER_LAYER = load_weather_zones()
 
-    # Geopolitics: capa + aplicar al grafo
+    # Geopolitics: load layer and annotate graph
     try:
         geop_layer, _, _ = load_geopolitics_config()
         GEOPOL_LAYER = geop_layer
@@ -103,6 +92,7 @@ def init_app():
         print(f"[WARN] Could not load/apply geopolitics config: {exc}")
         GEOPOL_LAYER = None
 
+    # Live weather enrichment → build aggregated weather layer
     try:
         update_graph_weather(GRAPH)
         WEATHER_LIVE_LAYER = build_weather_risk_layer(GRAPH)
@@ -111,33 +101,28 @@ def init_app():
         print(f"[WARN] Could not update live weather on startup: {exc}")
 
 
-    
-
 @app.on_event("startup")
 async def startup_event():
     global TRAFFIC_LAYER, SAFETY_LAYER
 
-    # 1) Carga síncrona de todo (puertos, grafo, weather estática + live)
+    # 1) Synchronous bootstrapping (ports, graph, static + live weather)
     init_app()
 
-    # 2) Actualizar tráfico AIS y construir TRAFFIC_LAYER
+    # 2) AIS traffic update → per-node traffic_risk → aggregated traffic layer
     try:
-        # Esto actualizará G.nodes[node]["traffic_risk"]
         await update_graph_traffic_from_ais(
             GRAPH,
             AIS_LAT_RANGE,
             AIS_LON_RANGE,
-            duration_sec=60.0,   # ya lo tienes así por defecto, pero así es explícito
+            duration_sec=60.0,  # explicit for readability
         )
-
-        # Ahora construimos la capa agregada en forma de polígonos
         TRAFFIC_LAYER = build_traffic_layer_from_graph(GRAPH)
         print(f"[INFO] Traffic layer built. Features: {len(TRAFFIC_LAYER.features)}")
-
     except Exception as exc:
         print(f"[WARN] Could not update AIS traffic on startup: {exc}")
         TRAFFIC_LAYER = None
 
+    # 3) Aggregated safety heatmap (piracy+weather+depth+traffic+geopolitics)
     try:
         SAFETY_LAYER = build_safety_layer_from_graph(GRAPH)
         print(f"[INFO] Safety layer built. Features: {len(SAFETY_LAYER.features)}")
@@ -213,10 +198,7 @@ async def get_port(portId: str):
 @app.post(
     "/route",
     response_model=RouteResponse,
-    responses={
-        400: {"model": ErrorResponse},
-        422: {"model": ErrorResponse},
-    },
+    responses={400: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
     tags=["Routing"],
 )
 async def route(request: RouteRequest):
@@ -263,6 +245,7 @@ async def risk_layers(
         description='Optional bounding box "minLon,minLat,maxLon,maxLat".',
     ),
 ):
+    # Parse requested layer types (if any)
     type_list = None
     if types:
         type_list = [t.strip().lower() for t in types.split(",")]
@@ -272,13 +255,13 @@ async def risk_layers(
     if PIRACY_LAYER and (type_list is None or "piracy" in type_list):
         layers.append(PIRACY_LAYER)
 
-    # Serve the aggregated live weather layer as "weather"
+    # Prefer live weather; fall back to static weather
     if WEATHER_LIVE_LAYER and (type_list is None or "weather" in type_list):
         layers.append(WEATHER_LIVE_LAYER)
     elif WEATHER_LAYER and (type_list is None or "weather" in type_list):
         layers.append(WEATHER_LAYER)
 
-    # ⬇⬇⬇ NUEVO: capa de tráfico
+    # Traffic layer (built from AIS)
     if TRAFFIC_LAYER and (type_list is None or "traffic" in type_list):
         layers.append(TRAFFIC_LAYER)
 
@@ -292,10 +275,6 @@ async def risk_layers(
     return RiskLayersResponse(layers=layers)
 
 
-
-# ───────────────────────────────
-# Run directly
-# ───────────────────────────────
-
+# ── Entrypoint (dev)
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)

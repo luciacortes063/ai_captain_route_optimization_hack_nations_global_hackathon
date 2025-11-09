@@ -62,7 +62,7 @@ class RouteSummary(BaseModel):
     totalDistanceNm: float
     estimatedDurationHours: float
 
-    # Riesgos NORMALIZADOS (promedio a lo largo de la ruta)
+    # Normalized risks along the routes
     totalWeatherRisk: float
     totalPiracyRisk: float
     totalDepthPenalty: float

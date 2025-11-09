@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from typing import Dict, Tuple, List
-
 import math
 
 from backend.models import RiskLayer, RiskFeature
@@ -11,8 +10,8 @@ from backend.config import GRID_LAT_STEP, GRID_LON_STEP
 
 def _cell_for_latlon(lat: float, lon: float) -> Tuple[float, float]:
     """
-    Agrupa nodos en celdas de la misma rejilla que el grafo,
-    para pintar cada celda como un pequeño rectángulo en el safety map.
+    Snap (lat, lon) to the graph's grid so we can paint each grid cell
+    as a small rectangle on the safety map.
     """
     cell_lat = round(lat / GRID_LAT_STEP) * GRID_LAT_STEP
     cell_lon = round(lon / GRID_LON_STEP) * GRID_LON_STEP
@@ -21,18 +20,18 @@ def _cell_for_latlon(lat: float, lon: float) -> Tuple[float, float]:
 
 def build_safety_layer_from_graph(G) -> RiskLayer:
     """
-    Capa agregada de "safety map" basada en:
+    Build an aggregated "safety map" layer from node attributes:
       - piracy_risk
       - weather_risk
       - depth_penalty
       - traffic_risk
       - geo_base_risk
 
-    Devuelve un RiskLayer con type="safety" y features con severity 1..5
-    para TODAS las celdas de mar (no solo donde hay riesgo > 0).
+    Returns a RiskLayer(type="safety") with severity 1..5 for ALL sea cells
+    (not only where risk > 0).
     """
 
-    # 1) agregamos riesgo por celda (incluyendo 0)
+    # 1) Aggregate raw risk per grid cell (include zeros to cover all sea)
     buckets: Dict[Tuple[float, float], List[float]] = {}
 
     for _, data in G.nodes(data=True):
@@ -47,10 +46,10 @@ def build_safety_layer_from_graph(G) -> RiskLayer:
         traffic = float(data.get("traffic_risk", 0.0))
         geo = float(data.get("geo_base_risk", 0.0))
 
-        # combinación sencilla, ajustable:
-        # - más peso a piracy y geopolítica
-        # - algo de peso a tráfico y profundidad
-        # - weather suavizado
+        # Weighted combination (tune as needed):
+        # - heavier weight on piracy/geopolitics
+        # - medium weight on traffic/depth
+        # - weather smoothed down
         risk_raw = (
             piracy * 3.0 +
             geo * 3.0 +
@@ -68,7 +67,7 @@ def build_safety_layer_from_graph(G) -> RiskLayer:
     if not buckets:
         return RiskLayer(type="safety", name="Aggregated Safety Map", features=[])
 
-    # 2) media por celda + min/max para normalizar
+    # 2) Mean risk per cell + track global min/max for normalization
     cell_scores: Dict[Tuple[float, float], float] = {}
     max_score = -1e9
     min_score = 1e9
@@ -81,7 +80,7 @@ def build_safety_layer_from_graph(G) -> RiskLayer:
         if avg < min_score:
             min_score = avg
 
-    # 3) construir polígonos rectangulares tipo "heatmap"
+    # 3) Build rectangular polygons for a heatmap effect
     half_lat = GRID_LAT_STEP / 2.0
     half_lon = GRID_LON_STEP / 2.0
 
@@ -89,7 +88,7 @@ def build_safety_layer_from_graph(G) -> RiskLayer:
     idx = 0
 
     if max_score <= min_score:
-        # todo igual: pon severidad intermedia (3)
+        # Edge case: uniform risk → assign mid severity (3) everywhere
         for (cell_lat, cell_lon) in cell_scores.keys():
             lat_min = cell_lat - half_lat
             lat_max = cell_lat + half_lat
@@ -113,13 +112,15 @@ def build_safety_layer_from_graph(G) -> RiskLayer:
             )
             idx += 1
     else:
-        # mapear linealmente min..max → sev 1..5
+        # Map min..max → severity 1..5 (linear)
         span = max_score - min_score
         for (cell_lat, cell_lon), score in cell_scores.items():
             norm = (score - min_score) / span  # 0..1
             sev = 1 + int(round(norm * 4.0))
-            if sev < 1: sev = 1
-            if sev > 5: sev = 5
+            if sev < 1:
+                sev = 1
+            if sev > 5:
+                sev = 5
 
             lat_min = cell_lat - half_lat
             lat_max = cell_lat + half_lat
@@ -144,7 +145,7 @@ def build_safety_layer_from_graph(G) -> RiskLayer:
             idx += 1
 
     return RiskLayer(
-        type="safety",
-        name="Aggregated Safety Map",
-        features=features,
-    )
+    type="safety",
+    name="Aggregated Safety Map",
+    features=features,
+)

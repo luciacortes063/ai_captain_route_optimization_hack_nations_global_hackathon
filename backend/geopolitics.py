@@ -12,10 +12,10 @@ from backend.models import RiskLayer, RiskFeature
 
 def load_geopolitics_config():
     """
-    Carga el geojson de zonas geopolíticas y devuelve:
-      - RiskLayer (para frontend /risk-layers)
-      - lista de (shapely_polygon, base_risk, target_flags_dict, zone_id, name, notes)
-      - country_aliases (mapa nombre país -> ISO3)
+    Load geopolitics GeoJSON and return:
+      - RiskLayer (for /risk-layers frontend)
+      - list of (shapely_polygon, base_risk, target_flags_dict, zone_id, name, notes)
+      - country_aliases (country name -> ISO3)
     """
     path = GEOPOLITICS_GEOJSON_PATH
     if not path.exists():
@@ -28,6 +28,7 @@ def load_geopolitics_config():
     country_aliases: Dict[str, str] = props.get("country_aliases", {}) or {}
 
     features: List[RiskFeature] = []
+    # Note: polygon element is a Shapely geometry (Polygon/MultiPolygon).
     polygons: List[Tuple[object, float, Dict[str, float], str, str, str]] = []
 
     for feat in data.get("features", []):
@@ -47,7 +48,7 @@ def load_geopolitics_config():
             (poly, base_risk, {k: float(v) for k, v in target_flags.items()}, str(zone_id), name, notes)
         )
 
-        # coords en geojson: [lon, lat], pero RiskFeature usa [lat, lon]
+        # GeoJSON uses [lon, lat]; RiskFeature expects [lat, lon]
         coords_lonlat = geom.get("coordinates", [[]])[0]
         coords_latlon = [[float(lat), float(lon)] for lon, lat in coords_lonlat]
 
@@ -71,12 +72,12 @@ def load_geopolitics_config():
 
 def apply_geopolitics_to_graph(G):
     """
-    Marca los nodos del grafo con:
+    Annotate graph nodes with:
       - geo_base_risk (float)
-      - geo_target_flags (dict iso3 -> extra_riesgo)
-      - geo_zones (lista de zone_ids)
+      - geo_target_flags (dict ISO3 -> extra risk)
+      - geo_zones (list of zone_ids)
     """
-    risk_layer, polygons, _ = load_geopolitics_config()
+    _, polygons, _ = load_geopolitics_config()
 
     for node_id, data in G.nodes(data=True):
         lat = data.get("lat")
@@ -97,6 +98,7 @@ def apply_geopolitics_to_graph(G):
             if base_risk > base_max:
                 base_max = base_risk
 
+            # Keep the max extra per ISO3
             for iso, val in target_flags.items():
                 current = flags.get(iso, 0.0)
                 if val > current:
@@ -117,8 +119,8 @@ def apply_geopolitics_to_graph(G):
 
 def get_zone_metadata() -> Dict[str, Dict[str, str]]:
     """
-    Devuelve un dict:
-      zone_id -> { "name": str, "notes": str }
+    Build a small metadata map:
+      zone_id -> {"name": str, "notes": str}
     """
     path = GEOPOLITICS_GEOJSON_PATH
     if not path.exists():
@@ -141,8 +143,8 @@ def get_zone_metadata() -> Dict[str, Dict[str, str]]:
 
 def infer_vessel_iso3_from_origin_country(origin_country: str | None) -> str | None:
     """
-    Dado el nombre de país del puerto de origen (ej. 'Tanzania'),
-    lo mapea a ISO3 usando los country_aliases del geojson.
+    Map origin port country name (e.g., 'Tanzania') to ISO3
+    using the GeoJSON country_aliases.
     """
     if not origin_country:
         return None

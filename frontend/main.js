@@ -1,5 +1,5 @@
 // =================== CONFIG ===================
-const API_BASE = "http://localhost:8000"; 
+const API_BASE = "http://localhost:8000";
 
 // =================== DOM HOOKS ===================
 const originSel   = document.getElementById("origin");
@@ -16,8 +16,7 @@ const trafficEl   = document.getElementById("traffic");
 const geoEl       = document.getElementById("geopolitics");
 const alertsEl    = document.getElementById("routeAlerts");
 
-
-// Overlays
+// Overlay controls
 const overlayModeRadios = document.querySelectorAll('input[name="overlayMode"]');
 const riskLegend  = document.getElementById("riskLegend");
 const safetyLegend = document.getElementById("safetyLegend");
@@ -28,40 +27,35 @@ function setControlsEnabled(enabled) {
   destSel.disabled   = !enabled;
   btn.disabled       = !enabled;
 }
-
 function setOverlayControlsEnabled(enabled) {
   overlayModeRadios.forEach(r => r.disabled = !enabled);
 }
-
 function getOverlayMode() {
   const r = document.querySelector('input[name="overlayMode"]:checked');
   return r ? r.value : "none";
 }
-
 function updateLegends() {
   const mode = getOverlayMode();
   if (mode === "risk") {
-    if (riskLegend) riskLegend.classList.remove("hidden");
-    if (safetyLegend) safetyLegend.classList.add("hidden");
+    riskLegend?.classList.remove("hidden");
+    safetyLegend?.classList.add("hidden");
   } else if (mode === "safety") {
-    if (riskLegend) riskLegend.classList.add("hidden");
-    if (safetyLegend) safetyLegend.classList.remove("hidden");
+    riskLegend?.classList.add("hidden");
+    safetyLegend?.classList.remove("hidden");
   } else {
-    if (riskLegend) riskLegend.classList.add("hidden");
-    if (safetyLegend) safetyLegend.classList.add("hidden");
+    riskLegend?.classList.add("hidden");
+    safetyLegend?.classList.add("hidden");
   }
 }
 
 // =================== MAP ===================
-
-// Region limits
+// Fixed region (no world wrap) and clamped pan
 const latRange = [-10.0, 35.0];
 const lonRange = [30.0, 65.0];
 const southWest = L.latLng(latRange[0], lonRange[0]);
 const northEast = L.latLng(latRange[1], lonRange[1]);
 const bounds = L.latLngBounds(southWest, northEast);
 
-// Map with hard pan limits
 const map = L.map("map", {
   zoomControl: true,
   maxBounds: bounds,
@@ -76,7 +70,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 const CENTER_LNG = bounds.getCenter().lng;
 
-// ---- compute a zoom that fits the region width
+// Compute a zoom that fits region width
 function zoomToFitWidth(m, b, maxZ = 18) {
   const sizeX = m.getSize().x;
   let chosen = 0;
@@ -89,32 +83,32 @@ function zoomToFitWidth(m, b, maxZ = 18) {
   return chosen;
 }
 
-// ---- non-reentrant fit + lock
+// Non-reentrant fit + lock at init/resize
 let _fitting = false;
 function fitWidthAndLock() {
   if (_fitting) return;
   _fitting = true;
   try {
-    map.invalidateSize();                       
-    const z = zoomToFitWidth(map, bounds, 8);   
+    map.invalidateSize();
+    const z = zoomToFitWidth(map, bounds, 8);
     map.setView(bounds.getCenter(), z, { animate: false });
-    map.setMinZoom(z);                          
-    map.setMaxZoom(8);                          
+    map.setMinZoom(z);
+    map.setMaxZoom(8);
     map.panInsideBounds(bounds, { animate: false });
-    clampHorizontalAtMinZoom();                 
+    clampHorizontalAtMinZoom();
   } finally {
     setTimeout(() => { _fitting = false; }, 0);
   }
 }
 
-// ---- guarded horizontal clamp at min-zoom
+// Keep center longitude fixed at min zoom (prevents drifting)
 const _clampBusy = { v: false };
 function clampHorizontalAtMinZoom() {
   if (_clampBusy.v) return;
   if (map.getZoom() !== map.getMinZoom()) return;
 
   const c = map.getCenter();
-  if (Math.abs(c.lng - CENTER_LNG) > 1e-6) {        // avoid jitter
+  if (Math.abs(c.lng - CENTER_LNG) > 1e-6) {
     _clampBusy.v = true;
     map.panTo([c.lat, CENTER_LNG], { animate: false });
     map.once('moveend', () => { _clampBusy.v = false; });
@@ -139,50 +133,41 @@ function clearRoute() {
 function clearHazards() {
   for (const l of hazardLayers) map.removeLayer(l);
   hazardLayers = [];
-  hazardLayers = [];
 }
 
-// --- Simple route smoothing with Chaikin's corner cutting ---
+// Simple Chaikin smoothing (client-side)
 function smoothRoute(coords, iterations = 2) {
   if (!Array.isArray(coords) || coords.length < 3) return coords;
 
-  let current = coords.map(p => [p[0], p[1]]); // copy
-
+  let current = coords.map(p => [p[0], p[1]]);
   for (let it = 0; it < iterations; it++) {
     const next = [];
-    next.push(current[0]); // keep start
-
+    next.push(current[0]);
     for (let i = 0; i < current.length - 1; i++) {
       const [lat1, lon1] = current[i];
       const [lat2, lon2] = current[i + 1];
-
       const qLat = 0.75 * lat1 + 0.25 * lat2;
       const qLon = 0.75 * lon1 + 0.25 * lon2;
       const rLat = 0.25 * lat1 + 0.75 * lat2;
       const rLon = 0.25 * lon1 + 0.75 * lon2;
-
-      next.push([qLat, qLon]);
-      next.push([rLat, rLon]);
+      next.push([qLat, qLon], [rLat, rLon]);
     }
-
-    next.push(current[current.length - 1]); // keep end
+    next.push(current[current.length - 1]);
     current = next;
   }
-
   return current;
 }
 
 function drawRouteFromCoordinates(rawCoords) {
   if (!Array.isArray(rawCoords)) return;
 
-  // sanitize points
+  // Basic sanitization + lat/lon flip fix if needed
   const coords = [];
   for (const p of rawCoords) {
     if (!Array.isArray(p) || p.length < 2) continue;
     let lat = Number(p[0]);
     let lng = Number(p[1]);
 
-    // if swapped or bizarre ranges, attempt flip
     if ((Math.abs(lat) > 90 && Math.abs(lng) <= 90) || Math.abs(lat) > 180) {
       const t = lat; lat = lng; lng = t;
     }
@@ -195,22 +180,16 @@ function drawRouteFromCoordinates(rawCoords) {
 
   if (coords.length < 2) return;
 
-  // smooth route
   const smoothCoords = smoothRoute(coords, 2);
 
   if (routeLayer) map.removeLayer(routeLayer);
   routeLayer = L.polyline(smoothCoords, { weight: 4, color: "#000000" }).addTo(map);
-  routeLayer.bringToFront();   // 👈 ruta siempre encima
+  routeLayer.bringToFront(); // keep route above overlays
 
   let b = L.latLngBounds(smoothCoords);
-  if (b.getNorth() === b.getSouth() || b.getEast() === b.getWest()) {
-    b = b.pad(0.0001);
-  }
+  if (b.getNorth() === b.getSouth() || b.getEast() === b.getWest()) b = b.pad(0.0001);
   if (!bounds.intersects(b)) {
-    b = L.latLngBounds([
-      b.getSouthWest(), b.getNorthEast(),
-      bounds.getSouthWest(), bounds.getNorthEast()
-    ]);
+    b = L.latLngBounds([b.getSouthWest(), b.getNorthEast(), bounds.getSouthWest(), bounds.getNorthEast()]);
   }
 
   try {
@@ -219,20 +198,18 @@ function drawRouteFromCoordinates(rawCoords) {
     console.error("fitBounds failed for route bounds:", b, err);
     return;
   }
-
   setTimeout(() => clampHorizontalAtMinZoom(), 0);
 }
 
 // =================== RISK LAYERS / SAFETY MAP ===================
-
 function colorForSafety(sev) {
-  // sev 1..5 -> verde → rojo
+  // 1..5 → green → red
   switch (sev) {
-    case 1: return "#00b050"; // very low
-    case 2: return "#92d050"; // low
-    case 3: return "#ffff00"; // medium
-    case 4: return "#ff4d00ff"; // high
-    case 5: return "#ff0000"; // very high
+    case 1: return "#00b050";
+    case 2: return "#92d050";
+    case 3: return "#ffff00";
+    case 4: return "#ff4d00"; // use 6-digit hex for broad SVG support
+    case 5: return "#ff0000";
     default: return "#cccccc";
   }
 }
@@ -241,13 +218,10 @@ function drawRiskLayers(layers) {
   clearHazards();
 
   const mode = getOverlayMode();
-  if (mode === "none") {
-    // no pintamos nada
-    return;
-  }
+  if (mode === "none") return; // no overlay
 
   for (const layer of layers || []) {
-    // filtramos según modo
+    // Filter by overlay mode
     if (mode === "risk" && layer.type === "safety") continue;
     if (mode === "safety" && layer.type !== "safety") continue;
 
@@ -283,8 +257,8 @@ function drawRiskLayers(layers) {
     }
   }
 
-  // Ruta siempre por encima de las capas
-  if (routeLayer) routeLayer.bringToFront();
+  // Keep route above overlays
+  routeLayer?.bringToFront();
 }
 
 // =================== API HELPERS ===================
@@ -324,7 +298,7 @@ async function apiPost(path, body) {
   return res.json();
 }
 
-// =================== PORTS  ===================
+// =================== PORTS ===================
 function withinZone(p) {
   return (
     typeof p.latitude === "number" &&
@@ -365,7 +339,7 @@ async function loadPorts() {
 async function loadRiskLayers() {
   try {
     const data = await apiGet("/risk-layers");
-    console.log("risk layers from API:", data); 
+    console.log("risk layers from API:", data);
     drawRiskLayers(data?.layers ?? []);
   } catch (e) {
     console.error("Error loading risk layers:", e);
@@ -383,7 +357,7 @@ function setResults(route) {
   const s = route?.summary || {};
   resultsEl.classList.remove("hidden");
 
-  // Distancia y ETA
+  // Distance & ETA
   distanceEl.textContent = s.totalDistanceNm != null
     ? `${s.totalDistanceNm.toFixed?.(1)} nm`
     : "–";
@@ -392,13 +366,14 @@ function setResults(route) {
     ? `${s.estimatedDurationHours.toFixed?.(1)} h`
     : "–";
 
-  // Riesgos normalizados
+  // Normalized risks
   piracyEl.textContent = s.totalPiracyRisk != null
     ? `${s.totalPiracyRisk.toFixed?.(2)} / 3`
     : "–";
 
+  // Weather is a continuous index; keep formatting consistent
   weatherEl.textContent = s.totalWeatherRisk != null
-    ? `${s.totalWeatherRisk.toFixed?.(2)} / 3`  // índice continuo, sin denominador
+    ? `${s.totalWeatherRisk.toFixed?.(2)}`
     : "–";
 
   if (trafficEl) {
@@ -409,11 +384,11 @@ function setResults(route) {
 
   if (geoEl) {
     geoEl.textContent = s.totalGeopoliticalRisk != null
-      ? `${s.totalGeopoliticalRisk.toFixed?.(2)} / 3`
+      ? `${s.totalGeopoliticalRisk.toFixed?.(2)}`
       : "–";
   }
 
-  // Separar explicaciones normales y alerts
+  // Split explanations vs. route alerts (alerts rendered as pills)
   const exp = route?.explanation || {};
   const rawLines = []
     .concat(exp.highLevel || [])
@@ -431,7 +406,7 @@ function setResults(route) {
     }
   });
 
-  // Lista normal de explicaciones
+  // Explanations list
   explEl.innerHTML = "";
   normalLines.forEach(t => {
     const li = document.createElement("li");
@@ -439,7 +414,7 @@ function setResults(route) {
     explEl.appendChild(li);
   });
 
-  // Pills de alerta (una por nota/zona)
+  // Alert pills (one per zone/note)
   if (alertsEl) {
     alertsEl.innerHTML = "";
     alertLines.forEach(t => {
@@ -451,7 +426,6 @@ function setResults(route) {
       label.textContent = "Route alert";
 
       const text = document.createElement("span");
-      // quitamos el prefijo "Route Alert:"
       text.textContent = t.replace(/^Route Alert:\s*/i, "");
 
       pill.appendChild(label);
@@ -460,7 +434,6 @@ function setResults(route) {
     });
   }
 }
-
 
 async function calculateRoute() {
   msg.textContent = "";
